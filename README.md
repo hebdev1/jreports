@@ -49,7 +49,8 @@ Without the two `VITE_` values the site still loads, but lists show a "couldn't 
 `npm run build` produces a static site in `dist/`. Upload it to any static host.
 
 - **Apache / Hostinger shared hosting:** upload the *contents* of `dist/` to `public_html/`. `public/.htaccess` is copied into `dist/` and sends every page URL to `index.html`, so links like `/episodes/ep-48` work after a refresh.
-- **Netlify / Vercel / Cloudflare Pages:** build command `npm run build`, output `dist`, and add a single-page-app fallback rewrite (`/* → /index.html`).
+- **Vercel:** import the repo; `vercel.json` already sets the Vite build, the `dist` output and the page-URL fallback. Add the two `VITE_` variables under Project → Settings → Environment Variables.
+- **Netlify / Cloudflare Pages:** build command `npm run build`, output `dist`, and add a single-page-app fallback rewrite (`/* → /index.html`).
 - The `VITE_` variables are read at **build** time; set them in the host's build settings or in `.env.local` before building.
 
 ## Supabase
