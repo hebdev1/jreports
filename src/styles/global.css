@@ -1,0 +1,115 @@
+/* Base rules from the design's <helmet> block, plus the states the design
+   expressed as style-hover / style-active attributes, focus styles and the
+   small-screen adjustments the inline styles can't express. */
+
+body { margin: 0; background: #F7F8FC; color: #0B1F5C; font-family: 'DM Sans', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+* { box-sizing: border-box; }
+a { color: #0B1F5C; text-decoration: none; }
+a:hover { color: #D21034; }
+button { font-family: inherit; }
+input, textarea, select { font-family: inherit; }
+img { max-width: 100%; }
+html { scroll-padding-top: 96px; }
+
+@keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: .35 } }
+@keyframes ticker { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+@keyframes spin { to { transform: rotate(360deg) } }
+@keyframes shimmer { 0% { background-position: -400px 0 } 100% { background-position: 400px 0 } }
+
+/* ---------- focus ---------- */
+:focus { outline: none; }
+:focus-visible { outline: 3px solid #D21034 !important; outline-offset: 3px; }
+.on-dark :focus-visible, .on-dark:focus-visible { outline-color: #FF8A9B !important; }
+.field:focus-visible { outline: 2px solid #00209F !important; outline-offset: 1px; border-color: #00209F !important; }
+.on-dark .field:focus-visible { outline-color: #FF8A9B !important; border-color: #FF8A9B !important; }
+.field[aria-invalid="true"] { border-color: #D21034 !important; }
+.on-dark .field[aria-invalid="true"] { border-color: #FF8A9B !important; }
+.field::placeholder { color: #6B7590; opacity: 1; }
+.on-dark .field::placeholder { color: #9AA6CC; }
+
+.skip-link { position: absolute; left: 16px; top: -100px; z-index: 100; background: #0B1F5C; color: #FFFFFF; padding: 12px 18px; border-radius: 8px; font-weight: 600; }
+.skip-link:focus { top: 12px; color: #FFFFFF; }
+
+.sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+/* ---------- interaction states (design style-hover / style-active) ---------- */
+button, a, .tap { transition: background-color 150ms ease-out, color 150ms ease-out, border-color 150ms ease-out, transform 150ms ease-out; }
+button:disabled { cursor: not-allowed !important; }
+.press:active:not(:disabled) { transform: scale(0.97); }
+
+@media (hover: hover) {
+  .h-red:hover:not(:disabled) { background: #B00D2B !important; }
+  .h-navy:hover:not(:disabled) { background: #00209F !important; }
+  .h-invert:hover { background: #0B1F5C !important; color: #F7F8FC !important; }
+  .h-pink:hover { border-color: #FF8A9B !important; color: #FF8A9B !important; }
+  .h-pink-text:hover { color: #FF8A9B !important; }
+  .h-white-text:hover { color: #FFFFFF !important; }
+  .h-red-text:hover { color: #D21034 !important; }
+  .h-white-border:hover { border-color: #FFFFFF !important; }
+  .h-white-bg:hover { background: #FFFFFF !important; }
+  .h-soft:hover { background: #F7F8FC !important; }
+  .h-blue-border:hover { border-color: #00209F !important; }
+  .h-lift:hover { transform: translateY(-2px); }
+  .h-row:hover { background: #FFFFFF; }
+  .h-play:hover { background: #D21034 !important; border-color: #D21034 !important; }
+  .h-play:hover > span { border-left-color: #FFFFFF !important; }
+}
+
+/* ---------- layout helpers ---------- */
+.ticker-run { display: flex; white-space: nowrap; animation: ticker 45s linear infinite; }
+.live-dot { animation: pulse 1.6s ease-in-out infinite; }
+.spinner { width: 18px; height: 18px; border-radius: 999px; border: 2px solid currentColor; border-right-color: transparent; display: inline-block; animation: spin 700ms linear infinite; vertical-align: -3px; }
+.skeleton { background: linear-gradient(90deg, #E9EDF6 0, #F4F6FB 50%, #E9EDF6 100%); background-size: 800px 100%; animation: shimmer 1.4s linear infinite; border-radius: 12px; }
+.on-dark .skeleton { background: linear-gradient(90deg, rgba(247,248,252,.06) 0, rgba(247,248,252,.12) 50%, rgba(247,248,252,.06) 100%); background-size: 800px 100%; }
+
+dialog.sub-dialog { border: 0; padding: 20px; background: transparent; max-width: none; max-height: none; width: 100%; height: 100%; margin: 0; display: grid; place-items: center; }
+dialog.sub-dialog:not([open]) { display: none; }
+dialog.sub-dialog::backdrop { background: rgba(8, 18, 48, 0.6); backdrop-filter: blur(6px); }
+
+/* ---------- header ---------- */
+.nav-desktop { display: flex; }
+.nav-toggle { display: none !important; }
+.mobile-nav { display: none; }
+
+/* The full header needs ~1308px; tighter spacing gets it to ~1220px, below which it would wrap. */
+@media (max-width: 1365px) {
+  .hdr-inner { gap: 16px !important; }
+  .nav-desktop .nav-item { padding: 8px 10px !important; }
+}
+@media (max-width: 1259px) {
+  .nav-desktop, .hdr-secondary { display: none !important; }
+  .nav-toggle { display: inline-flex !important; }
+  .hdr-inner { flex-wrap: nowrap !important; justify-content: space-between; }
+  .mobile-nav[data-open="true"] { display: block; }
+}
+
+/* ---------- small screens ---------- */
+@media (max-width: 640px) {
+  .wrap { padding-left: 20px !important; padding-right: 20px !important; }
+  .ep-row { grid-template-columns: minmax(0, 1fr) auto !important; gap: 16px !important; }
+  .ep-row > .ep-cover { grid-column: 1 / -1; width: 200px; max-width: 100%; }
+  .pay-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .stat-3 > div { padding-left: 0 !important; padding-right: 8px !important; }
+  .stat-3 .stat-num { font-size: 26px !important; }
+  .host-card { left: 12px !important; }
+  .card-pad { padding: 24px !important; }
+  .hdr-inner { padding: 12px 16px !important; }
+  .brand-sub { display: none !important; }
+}
+@media (max-width: 400px) {
+  .brand-word { font-size: 18px !important; }
+  .sub-btn { padding: 10px 14px !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+  .ticker-run { animation: none !important; flex-wrap: wrap; white-space: normal; }
+}
+
+/* ---------- print (talent release copy) ---------- */
+.print-only { display: none; }
+@media print {
+  body { background: #FFFFFF; }
+  .no-print, header, footer, .mini-player { display: none !important; }
+  .print-only { display: block !important; }
+}

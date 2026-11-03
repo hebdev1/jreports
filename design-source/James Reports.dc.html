@@ -1,0 +1,1744 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&family=Lora:ital,wght@0,400;0,500;1,400&family=Oswald:wght@500;700&family=Mrs+Saint+Delafield&display=swap" rel="stylesheet">
+<script src="./image-slot.js"></script>
+<style>
+body{margin:0;background:#F7F8FC;color:#0B1F5C;font-family:'DM Sans',-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+a{color:#0B1F5C;text-decoration:none}
+a:hover{color:#D21034}
+button{font-family:inherit}
+input{font-family:inherit}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+</style>
+</helmet>
+
+<div data-screen-label="James Reports" style="min-height:100vh;background:#F7F8FC;padding-bottom:{{ bottomPad }}">
+<div style="display:grid;grid-template-rows:4px 4px"><div style="background:#00209F"></div><div style="background:#D21034"></div></div>
+
+<sc-if value="{{ showTicker }}" hint-placeholder-val="{{ true }}">
+<div style="background:#081230;color:#F7F8FC;font-size:13px;letter-spacing:0.04em">
+  <div style="max-width:1320px;margin:0 auto;padding:10px 32px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+    <span style="display:flex;align-items:center;gap:8px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;font-size:11px;color:#FF8A9B">{{ liveDot }} Premiere</span>
+    <span style="flex:1;min-width:220px;color:#EEF1F8">New episode of James Reports premieres Thursday at 8 PM ET on YouTube</span>
+    <a href="https://www.youtube.com/@JamesReports" target="_blank" style="color:#FF8A9B;font-weight:600">Set a reminder →</a>
+  </div>
+</div>
+</sc-if>
+
+<header style="position:sticky;top:0;z-index:40;background:rgba(247,248,252,0.92);backdrop-filter:blur(14px);border-bottom:1px solid #E4E8F2">
+  <div style="max-width:1320px;margin:0 auto;padding:14px 32px;display:flex;align-items:center;gap:28px;flex-wrap:wrap">
+    <button onClick="{{ goHome }}" style="display:flex;align-items:center;gap:12px;background:none;border:0;padding:0;cursor:pointer;color:#0B1F5C">
+      <span style="width:40px;height:40px;border-radius:999px;background:#00209F;color:#FFFFFF;display:grid;place-items:center;font-family:'Oswald',sans-serif;font-weight:700;font-size:16px;box-shadow:inset 0 -12px 0 #D21034">JR</span>
+      <span style="display:flex;flex-direction:column;align-items:flex-start;line-height:1">
+        <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:22px;letter-spacing:0.02em;text-transform:uppercase"><span style="color:#D21034">James</span> <span style="color:#00209F">Reports</span></span>
+        <span style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#4A5578;margin-top:4px">with James Pierre</span>
+      </span>
+    </button>
+    <nav style="display:flex;gap:4px;flex:1;flex-wrap:wrap">
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="5">
+        <div onMouseEnter="{{ n.enter }}" onMouseLeave="{{ n.leave }}" style="position:relative">
+          <button onClick="{{ n.go }}" style="background:none;border:0;cursor:pointer;padding:8px 14px;font-size:14px;font-weight:500;color:{{ n.color }};border-bottom:2px solid {{ n.line }};display:flex;align-items:center;gap:6px">{{ n.label }}<sc-if value="{{ n.hasMenu }}" hint-placeholder-val="{{ false }}"><span style="width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:translateY(-2px) rotate(45deg)"></span></sc-if></button>
+          <sc-if value="{{ n.menuOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;left:0;top:100%;padding-top:10px;z-index:60">
+              <div style="width:320px;background:#FFFFFF;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.14);border:1px solid #E4E8F2;overflow:hidden">
+                <div style="display:grid;grid-template-rows:3px 3px"><div style="background:#00209F"></div><div style="background:#D21034"></div></div>
+                <div style="padding:16px 18px 8px;font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8A8A8A">Browse by topic</div>
+                <div style="display:flex;flex-direction:column;padding:0 8px 8px">
+                  <sc-for list="{{ topicMenu }}" as="t" hint-placeholder-count="6">
+                    <button onClick="{{ t.pick }}" style="display:grid;grid-template-columns:10px 1fr auto;gap:12px;align-items:center;text-align:left;background:none;border:0;border-radius:8px;padding:10px;cursor:pointer;color:#0B1F5C" style-hover="background:#F7F8FC">
+                      <span style="width:10px;height:10px;border-radius:3px;background:{{ t.color }}"></span>
+                      <span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:600">{{ t.label }}</span><span style="font-size:12px;color:#4A5578">{{ t.desc }}</span></span>
+                      <span style="font-size:12px;color:#8A8A8A;font-variant-numeric:tabular-nums">{{ t.count }}</span>
+                    </button>
+                  </sc-for>
+                </div>
+                <button onClick="{{ n.go }}" style="width:100%;text-align:left;background:#F7F8FC;border:0;border-top:1px solid #E4E8F2;padding:14px 18px;font-size:14px;font-weight:600;color:#D21034;cursor:pointer">All episodes →</button>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ n.podOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;left:0;top:100%;padding-top:10px;z-index:60">
+              <div style="width:300px;background:#FFFFFF;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.14);border:1px solid #E4E8F2;overflow:hidden">
+                <div style="display:grid;grid-template-rows:3px 3px"><div style="background:#00209F"></div><div style="background:#D21034"></div></div>
+                <div style="display:flex;flex-direction:column;padding:8px">
+                  <sc-for list="{{ podMenu }}" as="t" hint-placeholder-count="2">
+                    <button onClick="{{ t.pick }}" style="display:grid;grid-template-columns:36px 1fr;gap:12px;align-items:center;text-align:left;background:none;border:0;border-radius:8px;padding:10px;cursor:pointer;color:#0B1F5C" style-hover="background:#F7F8FC">
+                      <span style="width:36px;height:36px;border-radius:8px;background:{{ t.color }};color:#FFFFFF;display:grid;place-items:center;font-family:'Oswald',sans-serif;font-size:13px;font-weight:700">{{ t.icon }}</span>
+                      <span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:600">{{ t.label }}</span><span style="font-size:12px;color:#4A5578">{{ t.desc }}</span></span>
+                    </button>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </nav>
+    <div style="display:flex;align-items:center;gap:10px">
+      <button onClick="{{ goVip }}" style="display:flex;align-items:center;gap:8px;background:{{ vipNavBg }};border:0;color:#FFFFFF;border-radius:999px;padding:11px 18px;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#00209F"><span style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;background:#D21034;border-radius:4px;padding:2px 6px">VIP</span>Club</button>
+      <button onClick="{{ goSupport }}" style="background:transparent;border:1px solid #0B1F5C;color:#0B1F5C;border-radius:999px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#0B1F5C;color:#F7F8FC">Donate</button>
+      <button onClick="{{ openSub }}" style="background:#D21034;border:0;color:#FFFFFF;border-radius:999px;padding:11px 20px;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#B00D2B" style-active="transform:scale(0.97)">Subscribe</button>
+    </div>
+  </div>
+</header>
+
+<!-- ============ HOME ============ -->
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+<div>
+  <section style="background:#081230;color:#F7F8FC;overflow:hidden">
+    <div style="max-width:1320px;margin:0 auto;padding:72px 32px 80px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:56px;align-items:center">
+      <div style="display:flex;flex-direction:column;gap:28px">
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#081230;background:#D21034;padding:6px 10px;border-radius:4px">Latest episode</span>
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#C9D3F2">{{ hero.cat }} · {{ hero.dur }}</span>
+        </div>
+        <h1 style="margin:0;font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(44px,6.2vw,88px);line-height:0.98;letter-spacing:-0.03em;text-wrap:balance">{{ hero.title }}</h1>
+        <p style="margin:0;font-family:'Lora',serif;font-size:20px;line-height:1.55;color:#DDE3F0;max-width:560px;text-wrap:pretty">{{ hero.dek }}</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button onClick="{{ hero.play }}" style="display:flex;align-items:center;gap:10px;background:#D21034;color:#FFFFFF;border:0;border-radius:999px;padding:16px 26px;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#B00D2B">
+            <span style="width:0;height:0;border-left:11px solid #FFFFFF;border-top:7px solid transparent;border-bottom:7px solid transparent"></span> Listen now
+          </button>
+          <button onClick="{{ hero.open }}" style="background:transparent;color:#F7F8FC;border:1px solid rgba(247,248,252,0.4);border-radius:999px;padding:16px 26px;font-size:15px;font-weight:600;cursor:pointer" style-hover="border-color:#FF8A9B;color:#FF8A9B">Watch the interview</button>
+        </div>
+        <div style="display:flex;gap:40px;flex-wrap:wrap;padding-top:28px;border-top:1px solid rgba(247,248,252,0.14)">
+          <div><div style="font-family:'Playfair Display',serif;font-size:40px;font-weight:700;color:#FF8A9B;line-height:1">4×</div><div style="font-size:13px;color:#C3CCE6;margin-top:6px">Emmy Award winner</div></div>
+          <div><div style="font-family:'Playfair Display',serif;font-size:40px;font-weight:700;color:#FF8A9B;line-height:1">20+</div><div style="font-size:13px;color:#C3CCE6;margin-top:6px">Years in broadcast</div></div>
+          <div><div style="font-family:'Playfair Display',serif;font-size:40px;font-weight:700;color:#FF8A9B;line-height:1">4</div><div style="font-size:13px;color:#C3CCE6;margin-top:6px">Languages · EN FR KR ES</div></div>
+        </div>
+      </div>
+      <div style="position:relative">
+        <div style="position:relative;width:100%;aspect-ratio:4/5;border-radius:20px;overflow:hidden;background:#0B1F5C">
+          <image-slot id="hero-james" shape="rect" src="assets/james-blue-talk.png" placeholder="Portrait of James Pierre in studio"></image-slot>
+        </div>
+        <div style="position:absolute;left:-20px;bottom:32px;background:#FFFFFF;color:#0B1F5C;border-radius:12px;padding:16px 20px;box-shadow:0 8px 24px rgba(0,0,0,0.25);display:flex;flex-direction:column;gap:4px;max-width:260px">
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034">Host</span>
+          <span style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700">James Pierre</span>
+          <span style="font-family:'Lora',serif;font-style:italic;font-size:14px;color:#4A5578">Haitian-American journalist, anchor and producer</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="border-bottom:1px solid #E4E8F2;background:#FFFFFF">
+    <div style="max-width:1320px;margin:0 auto;padding:22px 32px;display:flex;gap:36px;align-items:center;flex-wrap:wrap">
+      <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8A8A8A">James has appeared on</span>
+      <div style="display:flex;gap:32px;flex-wrap:wrap;align-items:center;flex:1">
+        <sc-for list="{{ outlets }}" as="o" hint-placeholder-count="8">
+          <span style="font-family:'Playfair Display',serif;font-weight:700;font-size:18px;color:#4A5578;letter-spacing:-0.01em">{{ o }}</span>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width:1320px;margin:0 auto;padding:88px 32px 0">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:40px 56px;align-items:center">
+      <div style="display:flex;flex-direction:column;gap:18px">
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034">Our story</span>
+        <h2 style="margin:0;font-family:'Playfair Display',serif;font-size:clamp(34px,4vw,52px);font-weight:700;letter-spacing:-0.02em;line-height:1.05;text-wrap:balance">How James Reports began</h2>
+        <p style="margin:0;font-family:'Lora',serif;font-size:18px;line-height:1.6;color:#4A5578">James tells the story of why he created James Reports and what the channel stands for.</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button onClick="{{ goWatch }}" style="background:#0B1F5C;color:#FFFFFF;border:0;border-radius:999px;padding:14px 22px;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#00209F">Watch James Reports TV</button>
+          <button onClick="{{ goAbout }}" style="background:none;border:0;border-bottom:1px solid #0B1F5C;padding:4px 0;font-size:14px;font-weight:600;color:#0B1F5C;cursor:pointer">About James →</button>
+        </div>
+      </div>
+      <div style="position:relative;aspect-ratio:16/9;border-radius:20px;overflow:hidden;background:#081230;box-shadow:0 8px 24px rgba(0,0,0,0.11)">
+        <iframe src="https://www.youtube.com/embed/Q_oljAV4Yfs?start=31&amp;rel=0" title="The story of James Reports" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen="{{ true }}" style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width:1320px;margin:0 auto;padding:88px 32px 40px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;margin-bottom:36px">
+      <div>
+        <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034;margin-bottom:10px">The interviews</div>
+        <h2 style="margin:0;font-family:'Playfair Display',serif;font-size:clamp(34px,4vw,52px);font-weight:700;letter-spacing:-0.02em;line-height:1.05">Recent episodes</h2>
+      </div>
+      <button onClick="{{ goEpisodes }}" style="background:none;border:0;border-bottom:1px solid #0B1F5C;padding:4px 0;font-size:15px;font-weight:600;color:#0B1F5C;cursor:pointer">All episodes →</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr));gap:24px">
+      <sc-for list="{{ latest }}" as="ep" hint-placeholder-count="4">
+        <article onClick="{{ ep.open }}" style="cursor:pointer;display:flex;flex-direction:column;gap:14px;transition:transform 250ms ease-out" style-hover="transform:translateY(-2px)">
+          <div style="position:relative;aspect-ratio:16/10;border-radius:12px;background:{{ ep.cover }};overflow:hidden;padding:18px;display:flex;flex-direction:column;justify-content:space-between">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#FFFFFF">{{ ep.num }}</span>
+              <span style="font-size:11px;font-weight:600;color:#081230;background:#EEF1F8;padding:3px 7px;border-radius:4px">{{ ep.lang }}</span>
+            </div>
+            <div style="font-family:'Playfair Display',serif;font-style:italic;font-size:30px;line-height:1;color:#F7F8FC;opacity:0.92">{{ ep.cat }}</div>
+            <button onClick="{{ ep.play }}" style="position:absolute;right:16px;bottom:16px;width:44px;height:44px;border-radius:999px;border:0;background:#D21034;display:grid;place-items:center;cursor:pointer" style-hover="background:#B00D2B"><span style="width:0;height:0;margin-left:3px;border-left:11px solid #FFFFFF;border-top:7px solid transparent;border-bottom:7px solid transparent"></span></button>
+          </div>
+          <div style="font-size:12px;color:#8A8A8A;display:flex;gap:8px"><span>{{ ep.date }}</span><span>·</span><span>{{ ep.dur }}</span></div>
+          <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:22px;font-weight:600;line-height:1.2;text-wrap:pretty">{{ ep.title }}</h3>
+          <p style="margin:0;font-size:14px;line-height:1.5;color:#4A5578">{{ ep.guest }}</p>
+        </article>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="background:#081230;color:#FFFFFF">
+    <div style="max-width:1320px;margin:0 auto;padding:80px 32px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;margin-bottom:36px">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#FF8A9B;margin-bottom:10px"><span style="width:22px;height:16px;border-radius:4px;background:#D21034;display:grid;place-items:center"><span style="width:0;height:0;margin-left:2px;border-left:6px solid #FFFFFF;border-top:4px solid transparent;border-bottom:4px solid transparent"></span></span>Live from YouTube</div>
+          <h2 style="margin:0;font-family:'Playfair Display',serif;font-size:clamp(34px,4vw,52px);font-weight:700;letter-spacing:-0.02em;line-height:1.05">Latest on the podcast</h2>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+          <a href="https://www.youtube.com/@JamesReports" target="_blank" style="background:#D21034;color:#FFFFFF;border-radius:999px;padding:12px 20px;font-size:14px;font-weight:600">Subscribe on YouTube</a>
+          <button onClick="{{ goPodcast }}" style="background:none;border:0;border-bottom:1px solid #FFFFFF;padding:4px 0;font-size:15px;font-weight:600;color:#FFFFFF;cursor:pointer">Open the podcast →</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr));gap:24px">
+        <sc-for list="{{ ytLatest }}" as="v" hint-placeholder-count="4">
+          <article style="display:flex;flex-direction:column;gap:14px">
+            <div style="position:relative;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#0B1F5C">
+              <iframe src="{{ v.src }}" title="{{ v.label }}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen="{{ true }}" style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:12px;align-items:center">
+              <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#FF8A9B">{{ v.label }}</span>
+              <button onClick="{{ goPodcast }}" style="background:none;border:0;padding:0;font-size:13px;font-weight:600;color:#C3CCE6;cursor:pointer" style-hover="color:#FFFFFF">Watch on site →</button>
+            </div>
+          </article>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width:1320px;margin:0 auto;padding:88px 32px 88px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:56px">
+    <div>
+      <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034;margin-bottom:10px">Reports</div>
+      <h2 style="margin:0 0 28px;font-family:'Playfair Display',serif;font-size:clamp(34px,4vw,52px);font-weight:700;letter-spacing:-0.02em;line-height:1.05">On the record</h2>
+      <div style="display:flex;flex-direction:column">
+        <sc-for list="{{ reportsTop }}" as="r" hint-placeholder-count="4">
+          <button onClick="{{ goReports }}" style="text-align:left;background:none;border:0;border-top:1px solid #CDD4E6;padding:22px 0;display:grid;grid-template-columns:auto 1fr;gap:20px;cursor:pointer;color:#0B1F5C" style-hover="color:#D21034">
+            <span style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:#D21034;line-height:1;min-width:40px">{{ r.idx }}</span>
+            <span style="display:flex;flex-direction:column;gap:6px">
+              <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034">{{ r.cat }}</span>
+              <span style="font-family:'Playfair Display',serif;font-size:22px;font-weight:600;line-height:1.25">{{ r.title }}</span>
+              <span style="font-size:13px;color:#8A8A8A">{{ r.read }}</span>
+            </span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+    <div style="background:#E6EBF8;border-radius:20px;padding:40px;display:flex;flex-direction:column;gap:20px;align-self:start">
+      <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#00209F">Coverage history</div>
+      <p style="margin:0;font-family:'Lora',serif;font-size:22px;line-height:1.5;color:#0B1F5C;text-wrap:pretty">Two decades on the biggest stories in Haiti and South Florida.</p>
+      <div style="display:flex;flex-direction:column;gap:0">
+        <sc-for list="{{ timeline }}" as="t" hint-placeholder-count="5">
+          <div style="display:grid;grid-template-columns:64px 1fr;gap:16px;padding:14px 0;border-top:1px solid #C9D3F2">
+            <span style="font-family:'Playfair Display',serif;font-weight:700;font-size:18px;color:#00209F">{{ t.y }}</span>
+            <span style="font-size:15px;line-height:1.45;color:#0B1F5C">{{ t.e }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section style="background:#00209F">
+    <div style="max-width:1320px;margin:0 auto;padding:80px 32px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:48px;align-items:center">
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#FFFFFF;opacity:0.85">Independent journalism</div>
+        <h2 style="margin:0;font-family:'Playfair Display',serif;font-size:clamp(38px,5vw,68px);font-weight:700;letter-spacing:-0.03em;line-height:1;color:#FFFFFF;text-wrap:balance">No network. No owners. Funded by viewers.</h2>
+        <p style="margin:0;font-size:17px;line-height:1.6;color:#E6EBF8;max-width:520px">James Reports is produced independently. Your support pays for field reporting, travel to Haiti, translation and production.</p>
+      </div>
+      <div style="background:#081230;color:#F7F8FC;border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:20px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
+          <span style="font-family:'Playfair Display',serif;font-size:36px;font-weight:700;color:#FF8A9B">{{ raisedFmt }}</span>
+          <span style="font-size:14px;color:#C3CCE6">of {{ goalFmt }} monthly goal</span>
+        </div>
+        <div style="height:8px;border-radius:999px;background:rgba(247,248,252,0.12);overflow:hidden"><div style="height:100%;width:{{ goalPct }};background:#D21034;border-radius:999px"></div></div>
+        <div style="font-size:14px;color:#C3CCE6">{{ supportersFmt }} monthly supporters</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+          <sc-for list="{{ quickAmounts }}" as="q" hint-placeholder-count="4">
+            <button onClick="{{ q.pick }}" style="padding:14px 0;border-radius:8px;border:1px solid rgba(247,248,252,0.25);background:transparent;color:#F7F8FC;font-size:16px;font-weight:600;cursor:pointer" style-hover="border-color:#FF8A9B;color:#FF8A9B">{{ q.label }}</button>
+          </sc-for>
+        </div>
+        <button onClick="{{ goSupport }}" style="background:#D21034;color:#FFFFFF;border:0;border-radius:999px;padding:16px;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#B00D2B">Support James Reports</button>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width:1320px;margin:0 auto;padding:88px 32px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;margin-bottom:36px">
+      <div>
+        <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034;margin-bottom:10px">From the archive</div>
+        <h2 style="margin:0;font-family:'Playfair Display',serif;font-size:clamp(34px,4vw,52px);font-weight:700;letter-spacing:-0.02em;line-height:1.05">One-on-one conversations</h2>
+      </div>
+      <button onClick="{{ goArchive }}" style="background:none;border:0;border-bottom:1px solid #0B1F5C;padding:4px 0;font-size:15px;font-weight:600;color:#0B1F5C;cursor:pointer">Browse 100+ interviews →</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:20px">
+      <sc-for list="{{ archiveTop }}" as="a" hint-placeholder-count="5">
+        <a href="{{ a.href }}" target="_blank" style="display:flex;flex-direction:column;gap:10px;color:#0B1F5C">
+          <div style="aspect-ratio:4/3;border-radius:12px;overflow:hidden;background:#DDE3F0"><img src="{{ a.img }}" alt="{{ a.name }}" style="width:100%;height:100%;object-fit:cover;display:block"></div>
+          <span style="font-family:'Playfair Display',serif;font-size:18px;font-weight:600">{{ a.name }}</span>
+          <span style="font-size:13px;color:#8A8A8A">{{ a.show }}</span>
+        </a>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="max-width:1320px;margin:0 auto;padding:0 32px 88px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:20px">
+      <div>
+        <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034;margin-bottom:10px">Our sponsors</div>
+        <h2 style="margin:0;font-family:'Playfair Display',serif;font-size:clamp(28px,3vw,40px);font-weight:700;letter-spacing:-0.02em;line-height:1.1">James Reports is made possible by</h2>
+      </div>
+      <button onClick="{{ goBookingAds }}" style="background:none;border:0;border-bottom:1px solid #0B1F5C;padding:4px 0;font-size:14px;font-weight:600;color:#0B1F5C;cursor:pointer">Become a sponsor →</button>
+    </div>
+    <div style="border-radius:20px;overflow:hidden;background:#050B22;box-shadow:0 8px 24px rgba(0,0,0,0.11)">
+      <a href="https://www.fowennursesllc.com" target="_blank" rel="noopener noreferrer" style="display:block;position:relative;aspect-ratio:2564/1456;background:#050B22">
+        <img src="assets/sponsor-fowennurses.png" alt="FowenNurses — Pass your NCLEX with confidence. Kraze Bèt ou, Kwè nan Tèt ou." style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block">
+        <span style="position:absolute;right:16px;top:16px;font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#FFFFFF;background:rgba(5,11,34,0.7);border:1px solid rgba(247,248,252,0.3);padding:5px 9px;border-radius:4px">Sponsor</span>
+      </a>
+      <div style="display:flex;align-items:center;gap:16px 28px;flex-wrap:wrap;padding:22px 28px;background:#081230;color:#FFFFFF">
+        <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:220px">
+          <span style="font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase">FowenNurses</span>
+          <span style="font-size:14px;color:#C3CCE6">NCLEX preparation · 2,300+ nurses trained</span>
+        </div>
+        <a href="tel:+17328223518" style="color:#FFFFFF;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums">(732) 822-3518</a>
+        <a href="https://www.fowennursesllc.com" target="_blank" rel="noopener noreferrer" style="background:#D21034;color:#FFFFFF;border-radius:999px;padding:12px 20px;font-size:14px;font-weight:600">Visit fowennursesllc.com</a>
+      </div>
+    </div>
+  </section>
+</div>
+</sc-if>
+
+<!-- ============ WATCH (e-TV) ============ -->
+<sc-if value="{{ isWatch }}" hint-placeholder-val="{{ false }}">
+<section style="background:#050B22;color:#FFFFFF;min-height:80vh">
+  <div style="max-width:1440px;margin:0 auto;padding:28px 32px 64px;display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <span style="display:flex;align-items:center;gap:8px;background:#D21034;border-radius:4px;padding:6px 10px;font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#FFFFFF">{{ liveDotW }} On air</span>
+      <span style="font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase">James Reports <span style="color:#FF8A9B">TV</span></span>
+      <span style="flex:1"></span>
+      <span style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:500;font-variant-numeric:tabular-nums;color:#C3CCE6">{{ clock }}</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,620px),1fr));gap:20px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:0;min-width:0">
+        <div ref="{{ tvRef }}" style="position:relative;aspect-ratio:16/9;background:#000;border-radius:12px 12px 0 0;overflow:hidden">
+          <iframe src="{{ tvSrc }}" title="James Reports TV" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen="{{ true }}" style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>
+          <div style="position:absolute;right:16px;top:16px;pointer-events:none;display:flex;flex-direction:column;align-items:flex-end;line-height:1;background:rgba(5,11,34,0.55);padding:6px 8px;border-radius:4px">
+            <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:15px;color:#FFFFFF;letter-spacing:0.04em">JAMES</span>
+            <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;color:#FF8A9B;letter-spacing:0.08em">REPORTS</span>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:auto minmax(0,1fr);background:#0B1F5C;border-radius:0 0 12px 12px;overflow:hidden">
+          <span style="background:#D21034;padding:12px 16px;font-family:'Oswald',sans-serif;font-weight:700;font-size:14px;letter-spacing:0.08em;text-transform:uppercase;display:flex;align-items:center">{{ tvChName }}</span>
+          <div style="overflow:hidden;display:flex;align-items:center">{{ ticker }}</div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
+          <button onClick="{{ tvToggleSound }}" style="background:#FFFFFF;color:#050B22;border:0;border-radius:999px;padding:12px 20px;font-size:14px;font-weight:600;cursor:pointer">{{ tvSoundLabel }}</button>
+          <button onClick="{{ tvFullscreen }}" style="background:transparent;color:#FFFFFF;border:1px solid rgba(247,248,252,0.35);border-radius:999px;padding:12px 20px;font-size:14px;font-weight:600;cursor:pointer" style-hover="border-color:#FFFFFF">Full screen</button>
+          <button onClick="{{ tvNext }}" style="background:transparent;color:#FFFFFF;border:1px solid rgba(247,248,252,0.35);border-radius:999px;padding:12px 20px;font-size:14px;font-weight:600;cursor:pointer" style-hover="border-color:#FFFFFF">Next channel →</button>
+          <span style="flex:1"></span>
+          <a href="https://www.youtube.com/@JamesReports" target="_blank" rel="noopener noreferrer" onClick="{{ openYT }}" style="border:1px solid rgba(247,248,252,0.35);color:#FFFFFF;border-radius:999px;padding:12px 20px;font-size:14px;font-weight:600">Open on YouTube</a>
+        </div>
+      </div>
+      <aside style="display:flex;flex-direction:column;gap:20px">
+        <div style="background:#081230;border:1px solid rgba(247,248,252,0.1);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px">
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#FF8A9B">Channels</span>
+          <sc-for list="{{ tvChannels }}" as="c" hint-placeholder-count="4">
+            <button onClick="{{ c.pick }}" style="display:grid;grid-template-columns:48px 1fr;gap:14px;align-items:center;text-align:left;padding:12px;border-radius:8px;cursor:pointer;background:{{ c.bg }};border:1px solid {{ c.bd }};color:#FFFFFF">
+              <span style="font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;color:{{ c.numColor }}">{{ c.num }}</span>
+              <span style="display:flex;flex-direction:column;gap:3px"><span style="font-size:15px;font-weight:600">{{ c.name }}</span><span style="font-size:12px;color:#C3CCE6">{{ c.desc }}</span></span>
+            </button>
+          </sc-for>
+        </div>
+        <div style="background:#081230;border:1px solid rgba(247,248,252,0.1);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:4px">
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#FF8A9B;margin-bottom:8px">Program guide · today</span>
+          <sc-for list="{{ guide }}" as="g" hint-placeholder-count="5">
+            <div style="display:grid;grid-template-columns:72px 1fr;gap:12px;padding:10px 0;border-top:1px solid rgba(247,248,252,0.08)">
+              <span style="font-variant-numeric:tabular-nums;font-size:13px;font-weight:600;color:{{ g.timeColor }}">{{ g.time }}</span>
+              <span style="font-size:14px;color:{{ g.color }}">{{ g.name }}</span>
+            </div>
+          </sc-for>
+          <div style="margin-top:10px;padding:14px;border-radius:8px;background:#D21034;font-size:14px;line-height:1.45"><b>Thursday · 8 PM ET</b><br>New episode premiere</div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+</sc-if>
+
+<!-- ============ TALENT RELEASE ============ -->
+<sc-if value="{{ isRelease }}" hint-placeholder-val="{{ false }}">
+<div>
+  <section style="background:#081230;color:#FFFFFF">
+    <div style="max-width:1100px;margin:0 auto;padding:64px 32px 56px;display:flex;flex-direction:column;gap:18px">
+      <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#FF8A9B">For guests · Legal</span>
+      <h1 style="margin:0;font-family:'Playfair Display',serif;font-size:clamp(40px,5.4vw,72px);font-weight:700;letter-spacing:-0.03em;line-height:1">Talent release form</h1>
+      <p style="margin:0;font-family:'Lora',serif;font-size:19px;line-height:1.55;color:#C3CCE6;max-width:700px">Every guest signs this release before recording. It gives James Reports permission to use your appearance in the show and transfers the copyright in the recordings to James Reports.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;font-size:13px;color:#C3CCE6">
+        <span style="border:1px solid rgba(247,248,252,0.25);border-radius:999px;padding:6px 12px">About 5 minutes</span>
+        <span style="border:1px solid rgba(247,248,252,0.25);border-radius:999px;padding:6px 12px">Electronic signature</span>
+        <span style="border:1px solid rgba(247,248,252,0.25);border-radius:999px;padding:6px 12px">Copy sent by email</span>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-rows:4px 4px"><div style="background:#00209F"></div><div style="background:#D21034"></div></div>
+  </section>
+
+  <section style="max-width:1100px;margin:0 auto;padding:56px 32px 96px">
+    <sc-if value="{{ relSigned }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#FFFFFF;border-radius:20px;box-shadow:0 8px 24px rgba(0,0,0,0.11);padding:40px;display:flex;flex-direction:column;gap:16px">
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034">Release signed</span>
+        <h2 style="margin:0;font-family:'Playfair Display',serif;font-size:38px;font-weight:700;line-height:1.1">Thank you, you’re cleared for the show.</h2>
+        <p style="margin:0;font-size:16px;line-height:1.6;color:#4A5578">Document <b style="color:#0B1F5C">{{ relRef }}</b> was signed on {{ relDate }}. A PDF copy is on its way to your inbox for your records.</p>
+        <div style="font-family:'Mrs Saint Delafield',cursive;font-size:52px;line-height:1.1;color:#0B1F5C;border-bottom:1px solid #CDD4E6;padding-bottom:6px;max-width:420px">{{ relSig }}</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button onClick="{{ relPrint }}" style="background:#0B1F5C;color:#FFFFFF;border:0;border-radius:999px;padding:14px 22px;font-size:14px;font-weight:600;cursor:pointer">Print a copy</button>
+          <button onClick="{{ relReset }}" style="background:transparent;color:#0B1F5C;border:1px solid #0B1F5C;border-radius:999px;padding:14px 22px;font-size:14px;font-weight:600;cursor:pointer">Sign for another guest</button>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ relOpen }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;flex-direction:column;gap:28px">
+      <div style="background:#FFFFFF;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:36px;display:flex;flex-direction:column;gap:22px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap"><h2 style="margin:0;font-family:'Playfair Display',serif;font-size:28px;font-weight:700">1. Guest details</h2><span style="font-size:13px;color:#8A8A8A">All fields required</span></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:16px">
+          <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;font-weight:600;color:#4A5578">Full legal name</span><input value="{{ relName }}" onChange="{{ setRelName }}" placeholder="As it appears on your ID" style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;background:#FFFFFF;font-size:15px;color:#0B1F5C;width:100%;outline:0;min-width:0"></label>
+          <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;font-weight:600;color:#4A5578">Name as shown on screen</span><input placeholder="e.g. Dr. Marie Joseph"  style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;background:#FFFFFF;font-size:15px;color:#0B1F5C;width:100%;outline:0;min-width:0"></label>
+          <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;font-weight:600;color:#4A5578">Email</span><input placeholder="you@example.com"  style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;background:#FFFFFF;font-size:15px;color:#0B1F5C;width:100%;outline:0;min-width:0"></label>
+          <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;font-weight:600;color:#4A5578">Phone</span><input placeholder="(305) 000-0000"  style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;background:#FFFFFF;font-size:15px;color:#0B1F5C;width:100%;outline:0;min-width:0"></label>
+          <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;font-weight:600;color:#4A5578">Mailing address</span><input placeholder="Street, city, state, ZIP"  style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;background:#FFFFFF;font-size:15px;color:#0B1F5C;width:100%;outline:0;min-width:0"></label>
+          <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;font-weight:600;color:#4A5578">Date of birth</span><input placeholder="" type="date" style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;background:#FFFFFF;font-size:15px;color:#0B1F5C;width:100%;outline:0;min-width:0"></label>
+          <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;font-weight:600;color:#4A5578">Episode or segment</span><input placeholder="e.g. EP 49 · TPS update"  style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;background:#FFFFFF;font-size:15px;color:#0B1F5C;width:100%;outline:0;min-width:0"></label>
+          <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;font-weight:600;color:#4A5578">Recording date</span><input placeholder="" type="date" style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;background:#FFFFFF;font-size:15px;color:#0B1F5C;width:100%;outline:0;min-width:0"></label>
+        </div>
+        <label style="display:flex;gap:10px;align-items:center;font-size:15px;color:#0B1F5C"><input type="checkbox" checked="{{ relMinor }}" onChange="{{ toggleRelMinor }}" style="accent-color:#D21034;width:18px;height:18px">The guest is under 18</label>
+        <sc-if value="{{ relMinor }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#FDECEF;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px">
+            <span style="font-size:14px;line-height:1.5;color:#5A0A1A">A parent or legal guardian must sign on behalf of a minor.</span>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:16px">
+              <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;font-weight:600;color:#4A5578">Parent or guardian name</span><input placeholder="Full legal name"  style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;background:#FFFFFF;font-size:15px;color:#0B1F5C;width:100%;outline:0;min-width:0"></label>
+              <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;font-weight:600;color:#4A5578">Relationship to guest</span><input placeholder="e.g. Mother"  style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;background:#FFFFFF;font-size:15px;color:#0B1F5C;width:100%;outline:0;min-width:0"></label>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+
+      <div style="background:#FFFFFF;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:36px;display:flex;flex-direction:column;gap:18px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap"><h2 style="margin:0;font-family:'Playfair Display',serif;font-size:28px;font-weight:700">2. Release terms</h2><span style="font-size:13px;color:#8A8A8A">Please read carefully</span></div>
+        <div style="max-height:420px;overflow-y:auto;border:1px solid #E4E8F2;border-radius:12px;padding:8px 24px;background:#F7F8FC">
+          <div style="display:grid;grid-template-columns:36px 1fr;gap:12px;padding:18px 0;border-bottom:1px solid #E4E8F2"><span style="font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;color:#D21034">01</span><div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:16px;font-weight:700;color:#0B1F5C">Grant of rights</span><span style="font-size:15px;line-height:1.65;color:#4A5578">I grant James Reports and James Pierre (together, the “Producer”), and their licensees, successors and assigns, the irrevocable right to record, use, reproduce, edit, publish, broadcast, stream and distribute my name, image, likeness, voice, statements, biographical information and appearance (the “Appearance”) in the program James Reports and in any related promotion, advertising, clips, trailers and social media, in all media now known or later developed, worldwide and in perpetuity.</span></div></div>
+          <div style="display:grid;grid-template-columns:36px 1fr;gap:12px;padding:18px 0;border-bottom:1px solid #E4E8F2"><span style="font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;color:#D21034">02</span><div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:16px;font-weight:700;color:#0B1F5C">Copyright assignment</span><span style="font-size:15px;line-height:1.65;color:#4A5578">To the extent I have any copyright or other intellectual property interest in the recordings, footage, audio, photographs or transcripts made of my Appearance (the “Recordings”), I assign all right, title and interest in them to the Producer. The Producer is the sole owner of the Recordings and of the program, and may register copyrights in its own name.</span></div></div>
+          <div style="display:grid;grid-template-columns:36px 1fr;gap:12px;padding:18px 0;border-bottom:1px solid #E4E8F2"><span style="font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;color:#D21034">03</span><div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:16px;font-weight:700;color:#0B1F5C">Editing and use</span><span style="font-size:15px;line-height:1.65;color:#4A5578">The Producer may edit, cut, translate, subtitle, rearrange or combine the Recordings with other material at its sole discretion, and is not obligated to use or publish the Recordings.</span></div></div>
+          <div style="display:grid;grid-template-columns:36px 1fr;gap:12px;padding:18px 0;border-bottom:1px solid #E4E8F2"><span style="font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;color:#D21034">04</span><div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:16px;font-weight:700;color:#0B1F5C">No compensation</span><span style="font-size:15px;line-height:1.65;color:#4A5578">I agree that I am not entitled to any payment, royalty or other compensation for my Appearance or for any use of the Recordings, unless agreed in a separate written agreement signed by the Producer.</span></div></div>
+          <div style="display:grid;grid-template-columns:36px 1fr;gap:12px;padding:18px 0;border-bottom:1px solid #E4E8F2"><span style="font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;color:#D21034">05</span><div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:16px;font-weight:700;color:#0B1F5C">Release of claims</span><span style="font-size:15px;line-height:1.65;color:#4A5578">I release and discharge the Producer, its sponsors, distributors and partners from any claims arising from the use of the Recordings as permitted in this release, including claims for invasion of privacy, right of publicity, defamation or infringement of moral rights.</span></div></div>
+          <div style="display:grid;grid-template-columns:36px 1fr;gap:12px;padding:18px 0;border-bottom:1px solid #E4E8F2"><span style="font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;color:#D21034">06</span><div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:16px;font-weight:700;color:#0B1F5C">My representations</span><span style="font-size:15px;line-height:1.65;color:#4A5578">The information I provide is true to the best of my knowledge. I will not share confidential information or third-party material that I do not have the right to disclose. I have the full right to sign this release.</span></div></div>
+          <div style="display:grid;grid-template-columns:36px 1fr;gap:12px;padding:18px 0;border-bottom:0"><span style="font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;color:#D21034">07</span><div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:16px;font-weight:700;color:#0B1F5C">Governing law</span><span style="font-size:15px;line-height:1.65;color:#4A5578">This release is governed by the laws of the State of Florida. It is the entire agreement between us on this subject, and a signed electronic copy has the same effect as an original.</span></div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;padding-top:4px">
+          <sc-for list="{{ relChecks }}" as="c" hint-placeholder-count="4">
+            <label style="display:flex;gap:12px;align-items:flex-start;font-size:15px;line-height:1.5;color:#0B1F5C;cursor:pointer"><input type="checkbox" checked="{{ c.on }}" onChange="{{ c.toggle }}" style="accent-color:#D21034;width:18px;height:18px;margin-top:2px;flex-shrink:0">{{ c.label }}</label>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="background:#FFFFFF;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:36px;display:flex;flex-direction:column;gap:20px">
+        <h2 style="margin:0;font-family:'Playfair Display',serif;font-size:28px;font-weight:700">3. Signature</h2>
+        <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;font-weight:600;color:#4A5578">Type your full legal name to sign</span><input value="{{ relSigInput }}" onChange="{{ setRelSig }}" placeholder="Full legal name" style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;background:#FFFFFF;font-size:15px;color:#0B1F5C;width:100%;outline:0;min-width:0"></label>
+        <div style="position:relative;border:1px dashed #CDD4E6;border-radius:12px;background:#F7F8FC;min-height:120px;padding:20px 24px;display:flex;flex-direction:column;justify-content:flex-end">
+          <span style="font-family:'Mrs Saint Delafield',cursive;font-size:56px;line-height:1.1;color:{{ relSigColor }}">{{ relSigPreview }}</span>
+          <div style="border-top:1px solid #0B1F5C;margin-top:4px;display:flex;justify-content:space-between;gap:12px;padding-top:8px;font-size:12px;color:#8A8A8A"><span>Signature of guest{{ relGuardianSuffix }}</span><span>{{ relToday }}</span></div>
+        </div>
+        <button onClick="{{ relSubmit }}" style="background:{{ relCtaBg }};color:#FFFFFF;border:0;border-radius:999px;padding:18px;font-size:16px;font-weight:600;cursor:pointer" style-active="transform:scale(0.97)">{{ relCta }}</button>
+        <p style="margin:0;font-size:12px;line-height:1.5;color:#8A8A8A;text-align:center">By signing electronically you agree your typed name has the same legal effect as a handwritten signature. Your IP address and time of signing are recorded.</p>
+      </div>
+    </div>
+    </sc-if>
+  </section>
+</div>
+</sc-if>
+
+<!-- ============ GUEST REQUEST ============ -->
+<sc-if value="{{ isGuest }}" hint-placeholder-val="{{ false }}">
+<section style="max-width:1320px;margin:0 auto;padding:72px 32px 80px">
+  <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034;margin-bottom:10px">Podcast · Guest request</div>
+  <h1 style="margin:0 0 16px;font-family:'Playfair Display',serif;font-size:clamp(44px,6vw,84px);font-weight:700;letter-spacing:-0.03em;line-height:1">Be a guest on James Reports</h1>
+  <p style="margin:0 0 44px;font-family:'Lora',serif;font-size:19px;color:#4A5578;max-width:640px;line-height:1.55">James sits down with people who have something to say about immigration, politics, Haiti, community, culture, sports and entertainment.</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:20px">
+    <div style="background:#FFFFFF;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:28px;display:flex;flex-direction:column;gap:10px"><span style="font-family:'Oswald',sans-serif;font-size:36px;font-weight:700;color:#D21034;line-height:1">01</span><span style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700">Send your pitch</span><span style="font-size:15px;line-height:1.55;color:#4A5578">Fill out the form below with your topic and background.</span></div>
+    <div style="background:#FFFFFF;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:28px;display:flex;flex-direction:column;gap:10px"><span style="font-family:'Oswald',sans-serif;font-size:36px;font-weight:700;color:#D21034;line-height:1">02</span><span style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700">Producer review</span><span style="font-size:15px;line-height:1.55;color:#4A5578">The team reviews every request and reaches out if it’s a fit.</span></div>
+    <div style="background:#FFFFFF;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:28px;display:flex;flex-direction:column;gap:10px"><span style="font-family:'Oswald',sans-serif;font-size:36px;font-weight:700;color:#D21034;line-height:1">03</span><span style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700">Pre-interview</span><span style="font-size:15px;line-height:1.55;color:#4A5578">A short call to shape the conversation and pick a date.</span></div>
+    <div style="background:#FFFFFF;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:28px;display:flex;flex-direction:column;gap:10px"><span style="font-family:'Oswald',sans-serif;font-size:36px;font-weight:700;color:#D21034;line-height:1">04</span><span style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700">Recording</span><span style="font-size:15px;line-height:1.55;color:#4A5578">In studio in Miami or remotely, in the language of your choice.</span></div>
+  </div>
+</section>
+</sc-if>
+
+<!-- ============ PODCAST ============ -->
+<sc-if value="{{ isPodcast }}" hint-placeholder-val="{{ false }}">
+<div>
+  <section style="background:#081230;color:#FFFFFF">
+    <div style="max-width:1320px;margin:0 auto;padding:64px 32px 72px;display:flex;flex-direction:column;gap:36px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:24px 56px;align-items:end">
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#FF8A9B">The podcast · @JamesReports</span>
+          <h1 style="margin:0;font-family:'Oswald',sans-serif;font-weight:700;font-size:clamp(52px,7vw,104px);line-height:0.92;letter-spacing:0.01em;text-transform:uppercase"><span style="color:#FFFFFF">James</span><br><span style="color:#FF8A9B">Reports</span></h1>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:18px;align-items:flex-start">
+          <p style="margin:0;font-family:'Lora',serif;font-size:19px;line-height:1.55;color:#C3CCE6">Exclusive interviews and in-depth reporting on immigration, politics, Haiti and the Haitian community worldwide. New episodes premiere on YouTube.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <a href="https://www.youtube.com/@JamesReports" target="_blank" style="background:#D21034;color:#FFFFFF;border-radius:999px;padding:14px 22px;font-size:14px;font-weight:600">Subscribe on YouTube</a>
+            <a href="https://www.youtube.com/@JamesReports" target="_blank" style="border:1px solid rgba(247,248,252,0.4);color:#FFFFFF;border-radius:999px;padding:14px 22px;font-size:14px;font-weight:600">Open channel</a>
+            <button onClick="{{ openSub }}" style="background:transparent;border:1px solid rgba(247,248,252,0.4);color:#FFFFFF;border-radius:999px;padding:14px 22px;font-size:14px;font-weight:600;cursor:pointer">Premiere alerts</button>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <sc-for list="{{ ytLists }}" as="p" hint-placeholder-count="3">
+          <button onClick="{{ p.pick }}" style="border-radius:999px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;background:{{ p.bg }};color:{{ p.fg }};border:1px solid {{ p.bd }}">{{ p.label }}</button>
+        </sc-for>
+      </div>
+      <div style="position:relative;aspect-ratio:16/9;border-radius:20px;overflow:hidden;background:#0B1F5C;box-shadow:0 8px 24px rgba(0,0,0,0.35)">
+        <iframe src="{{ ytMainSrc }}" title="James Reports on YouTube" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen="{{ true }}" style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>
+      </div>
+      <div style="display:grid;grid-template-rows:4px 4px;border-radius:2px;overflow:hidden"><div style="background:#00209F"></div><div style="background:#D21034"></div></div>
+    </div>
+  </section>
+
+  <section style="max-width:1320px;margin:0 auto;padding:80px 32px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;margin-bottom:32px">
+      <div>
+        <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034;margin-bottom:10px">Most recent uploads</div>
+        <h2 style="margin:0;font-family:'Playfair Display',serif;font-size:clamp(34px,4vw,52px);font-weight:700;letter-spacing:-0.02em;line-height:1.05">Watch the latest</h2>
+      </div>
+      <a href="https://www.youtube.com/@JamesReports" target="_blank" style="border-bottom:1px solid #0B1F5C;padding:4px 0;font-size:15px;font-weight:600">All videos on YouTube →</a>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr));gap:24px">
+      <sc-for list="{{ ytGrid }}" as="v" hint-placeholder-count="6">
+        <div style="position:relative;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#DDE3F0;box-shadow:0 2px 12px rgba(0,0,0,0.07)">
+          <iframe src="{{ v.src }}" title="{{ v.label }}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen="{{ true }}" style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="background:#E6EBF8">
+    <div style="max-width:1320px;margin:0 auto;padding:64px 32px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:32px 56px;align-items:center">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#00209F">Keep it independent</span>
+        <h2 style="margin:0;font-family:'Playfair Display',serif;font-size:clamp(30px,3.4vw,44px);font-weight:700;letter-spacing:-0.02em;line-height:1.1">Every episode is funded by viewers.</h2>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <button onClick="{{ goSupport }}" style="background:#D21034;color:#FFFFFF;border:0;border-radius:999px;padding:16px 26px;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#B00D2B">Support James Reports</button>
+        <button onClick="{{ goBookingAds }}" style="background:transparent;color:#0B1F5C;border:1px solid #0B1F5C;border-radius:999px;padding:16px 26px;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#FFFFFF">Sponsor an episode</button>
+      </div>
+    </div>
+  </section>
+</div>
+</sc-if>
+
+<!-- ============ EPISODES ============ -->
+<sc-if value="{{ isEpisodes }}" hint-placeholder-val="{{ false }}">
+<section style="max-width:1320px;margin:0 auto;padding:72px 32px 96px">
+  <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034;margin-bottom:10px">Watch · Listen</div>
+  <h1 style="margin:0 0 16px;font-family:'Playfair Display',serif;font-size:clamp(44px,6vw,84px);font-weight:700;letter-spacing:-0.03em;line-height:1">Episodes</h1>
+  <p style="margin:0 0 40px;font-family:'Lora',serif;font-size:19px;color:#4A5578;max-width:620px;line-height:1.55">Long-form interviews on immigration, politics, Haiti and the diaspora. Every episode premieres on YouTube and is available here as audio.</p>
+  <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:40px;padding-bottom:28px;border-bottom:1px solid #CDD4E6">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8A8A8A;width:90px">Topic</span>
+      <sc-for list="{{ catChips }}" as="c" hint-placeholder-count="6">
+        <button onClick="{{ c.pick }}" style="border-radius:999px;padding:8px 16px;font-size:14px;font-weight:500;cursor:pointer;background:{{ c.bg }};color:{{ c.fg }};border:1px solid {{ c.bd }}">{{ c.label }}</button>
+      </sc-for>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8A8A8A;width:90px">Language</span>
+      <sc-for list="{{ langChips }}" as="c" hint-placeholder-count="5">
+        <button onClick="{{ c.pick }}" style="border-radius:999px;padding:8px 16px;font-size:14px;font-weight:500;cursor:pointer;background:{{ c.bg }};color:{{ c.fg }};border:1px solid {{ c.bd }}">{{ c.label }}</button>
+      </sc-for>
+    </div>
+  </div>
+  <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
+    <p style="font-size:16px;color:#4A5578">No episodes match these filters yet.</p>
+  </sc-if>
+  <div style="display:flex;flex-direction:column">
+    <sc-for list="{{ filtered }}" as="ep" hint-placeholder-count="6">
+      <article onClick="{{ ep.open }}" style="display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr) auto;gap:28px;align-items:center;padding:24px 0;border-bottom:1px solid #E4E8F2;cursor:pointer" style-hover="background:#FFFFFF">
+        <div style="aspect-ratio:16/10;border-radius:12px;background:{{ ep.cover }};padding:14px;display:flex;flex-direction:column;justify-content:space-between">
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#FFFFFF">{{ ep.num }}</span>
+          <span style="font-family:'Playfair Display',serif;font-style:italic;font-size:22px;color:#F7F8FC">{{ ep.cat }}</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+          <div style="font-size:12px;color:#8A8A8A;display:flex;gap:8px;flex-wrap:wrap"><span>{{ ep.date }}</span><span>·</span><span>{{ ep.dur }}</span><span>·</span><span style="font-weight:600;color:#00209F">{{ ep.langName }}</span></div>
+          <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:26px;font-weight:600;line-height:1.2;text-wrap:pretty">{{ ep.title }}</h3>
+          <p style="margin:0;font-size:15px;line-height:1.5;color:#4A5578;max-width:640px">{{ ep.dek }}</p>
+        </div>
+        <button onClick="{{ ep.play }}" style="width:56px;height:56px;border-radius:999px;border:1px solid #0B1F5C;background:transparent;display:grid;place-items:center;cursor:pointer" style-hover="background:#D21034;border-color:#D21034"><span style="width:0;height:0;margin-left:3px;border-left:13px solid #0B1F5C;border-top:8px solid transparent;border-bottom:8px solid transparent"></span></button>
+      </article>
+    </sc-for>
+  </div>
+</section>
+</sc-if>
+
+<!-- ============ EPISODE DETAIL ============ -->
+<sc-if value="{{ isEpisode }}" hint-placeholder-val="{{ false }}">
+<div>
+  <section style="background:#081230;color:#F7F8FC">
+    <div style="max-width:1320px;margin:0 auto;padding:40px 32px 64px">
+      <button onClick="{{ goEpisodes }}" style="background:none;border:0;color:#C3CCE6;font-size:14px;cursor:pointer;padding:0;margin-bottom:28px">← All episodes</button>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));gap:48px;align-items:start">
+        <div style="position:relative;aspect-ratio:16/9;border-radius:20px;background:{{ cur.cover }};overflow:hidden;display:grid;place-items:center">
+          <image-slot id="ep-video-still" shape="rect" src="assets/keyart.png" placeholder="Episode still or YouTube thumbnail"></image-slot>
+          <button onClick="{{ cur.play }}" style="position:absolute;width:84px;height:84px;border-radius:999px;border:0;background:#D21034;display:grid;place-items:center;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,0.3)" style-hover="background:#B00D2B"><span style="width:0;height:0;margin-left:5px;border-left:22px solid #FFFFFF;border-top:13px solid transparent;border-bottom:13px solid transparent"></span></button>
+          <span style="position:absolute;left:16px;top:16px;font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;background:rgba(8,18,48,0.8);color:#FF8A9B;padding:6px 10px;border-radius:4px">{{ cur.num }} · {{ cur.dur }}</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#081230;background:#C9D3F2;padding:5px 9px;border-radius:4px">{{ cur.cat }}</span>
+            <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#081230;background:#EEF1F8;padding:5px 9px;border-radius:4px">{{ cur.langName }}</span>
+          </div>
+          <h1 style="margin:0;font-family:'Playfair Display',serif;font-size:clamp(36px,4.2vw,58px);font-weight:700;letter-spacing:-0.02em;line-height:1.05;text-wrap:balance">{{ cur.title }}</h1>
+          <p style="margin:0;font-family:'Lora',serif;font-size:18px;line-height:1.6;color:#DDE3F0">{{ cur.dek }}</p>
+          <div style="font-size:14px;color:#C3CCE6">{{ cur.guest }} · {{ cur.date }}</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button onClick="{{ cur.play }}" style="background:#D21034;color:#FFFFFF;border:0;border-radius:999px;padding:14px 22px;font-size:14px;font-weight:600;cursor:pointer">Listen · audio</button>
+            <a href="https://www.youtube.com/@JamesReports" target="_blank" rel="noopener noreferrer" onClick="{{ openYT }}" style="border:1px solid rgba(247,248,252,0.4);color:#F7F8FC;border-radius:999px;padding:14px 22px;font-size:14px;font-weight:600">Watch on YouTube</a>
+            <button onClick="{{ copyLink }}" style="background:transparent;border:1px solid rgba(247,248,252,0.4);color:#F7F8FC;border-radius:999px;padding:14px 22px;font-size:14px;font-weight:600;cursor:pointer">{{ shareLabel }}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section style="max-width:1320px;margin:0 auto;padding:64px 32px 96px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:56px">
+    <div>
+      <h2 style="margin:0 0 20px;font-family:'Playfair Display',serif;font-size:30px;font-weight:700">Chapters</h2>
+      <div style="display:flex;flex-direction:column">
+        <sc-for list="{{ chapters }}" as="ch" hint-placeholder-count="5">
+          <button onClick="{{ ch.seek }}" style="display:grid;grid-template-columns:72px 1fr;gap:16px;text-align:left;background:none;border:0;border-top:1px solid #E4E8F2;padding:16px 0;cursor:pointer;color:#0B1F5C" style-hover="color:#D21034">
+            <span style="font-variant-numeric:tabular-nums;font-weight:600;color:#D21034">{{ ch.t }}</span>
+            <span style="font-size:16px">{{ ch.label }}</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:24px">
+      <div style="background:#FFFFFF;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:28px;display:flex;flex-direction:column;gap:12px">
+        <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8A8A8A">Transcript</div>
+        <p style="margin:0;font-size:15px;line-height:1.6;color:#4A5578">Full transcripts are published with every episode in English, French, Haitian Creole and Spanish.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span style="border:1px solid #CDD4E6;border-radius:999px;padding:6px 12px;font-size:13px">English</span>
+          <span style="border:1px solid #CDD4E6;border-radius:999px;padding:6px 12px;font-size:13px">Français</span>
+          <span style="border:1px solid #CDD4E6;border-radius:999px;padding:6px 12px;font-size:13px">Kreyòl</span>
+          <span style="border:1px solid #CDD4E6;border-radius:999px;padding:6px 12px;font-size:13px">Español</span>
+        </div>
+      </div>
+      <div style="background:#0B1F5C;color:#F7F8FC;border-radius:12px;padding:28px;display:flex;flex-direction:column;gap:14px">
+        <div style="font-family:'Playfair Display',serif;font-size:24px;font-weight:700">Made possible by viewers like you</div>
+        <p style="margin:0;font-size:15px;line-height:1.55;color:#C3CCE6">This episode was funded by {{ supportersFmt }} monthly supporters.</p>
+        <button onClick="{{ goSupport }}" style="align-self:flex-start;background:#D21034;color:#FFFFFF;border:0;border-radius:999px;padding:12px 20px;font-size:14px;font-weight:600;cursor:pointer">Become a supporter</button>
+      </div>
+    </div>
+  </section>
+</div>
+</sc-if>
+
+<!-- ============ REPORTS ============ -->
+<sc-if value="{{ isReports }}" hint-placeholder-val="{{ false }}">
+<section style="max-width:1320px;margin:0 auto;padding:72px 32px 96px">
+  <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034;margin-bottom:10px">Written reporting</div>
+  <h1 style="margin:0 0 48px;font-family:'Playfair Display',serif;font-size:clamp(44px,6vw,84px);font-weight:700;letter-spacing:-0.03em;line-height:1">Reports</h1>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:40px 48px">
+    <sc-for list="{{ reports }}" as="r" hint-placeholder-count="6">
+      <article style="display:flex;flex-direction:column;gap:12px;padding-top:24px;border-top:2px solid #0B1F5C">
+        <div style="display:flex;justify-content:space-between;gap:12px"><span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#00209F">{{ r.cat }}</span><span style="font-size:12px;color:#8A8A8A">{{ r.date }}</span></div>
+        <h2 style="margin:0;font-family:'Playfair Display',serif;font-size:28px;font-weight:600;line-height:1.2;text-wrap:pretty">{{ r.title }}</h2>
+        <p style="margin:0;font-family:'Lora',serif;font-size:17px;line-height:1.55;color:#4A5578">{{ r.dek }}</p>
+        <span style="font-size:13px;color:#8A8A8A">{{ r.read }}</span>
+      </article>
+    </sc-for>
+  </div>
+</section>
+</sc-if>
+
+<!-- ============ ARCHIVE ============ -->
+<sc-if value="{{ isArchive }}" hint-placeholder-val="{{ false }}">
+<section style="max-width:1320px;margin:0 auto;padding:72px 32px 96px">
+  <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034;margin-bottom:10px">2014 — today</div>
+  <h1 style="margin:0 0 16px;font-family:'Playfair Display',serif;font-size:clamp(44px,6vw,84px);font-weight:700;letter-spacing:-0.03em;line-height:1">The archive</h1>
+  <p style="margin:0 0 40px;font-family:'Lora',serif;font-size:19px;color:#4A5578;max-width:620px;line-height:1.55">Interviews from The Talk with James Pierre, WPBT2, PBS Miami and MDC-TV.</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:28px 20px">
+    <sc-for list="{{ archive }}" as="a" hint-placeholder-count="10">
+      <a href="{{ a.href }}" target="_blank" style="display:flex;flex-direction:column;gap:10px;color:#0B1F5C">
+        <div style="aspect-ratio:4/3;border-radius:12px;overflow:hidden;background:#DDE3F0"><img src="{{ a.img }}" alt="{{ a.name }}" style="width:100%;height:100%;object-fit:cover;display:block"></div>
+        <span style="font-family:'Playfair Display',serif;font-size:18px;font-weight:600">{{ a.name }}</span>
+        <span style="font-size:13px;color:#8A8A8A">{{ a.show }}</span>
+      </a>
+    </sc-for>
+  </div>
+</section>
+</sc-if>
+
+<!-- ============ ABOUT ============ -->
+<sc-if value="{{ isAbout }}" hint-placeholder-val="{{ false }}">
+<div>
+  <section style="max-width:1320px;margin:0 auto;padding:72px 32px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:64px;align-items:start">
+    <div style="position:relative;aspect-ratio:4/5;border-radius:20px;overflow:hidden;background:#DDE3F0">
+      <image-slot id="about-james" shape="rect" src="assets/james-emmy.png" placeholder="James Pierre at the anchor desk"></image-slot>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:24px">
+      <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034">About</div>
+      <h1 style="margin:0;font-family:'Playfair Display',serif;font-size:clamp(44px,6vw,80px);font-weight:700;letter-spacing:-0.03em;line-height:1">James Pierre</h1>
+      <p style="margin:0;font-family:'Lora',serif;font-size:21px;line-height:1.55;color:#0B1F5C">4-time Emmy Award-winning Haitian-American journalist, television producer and multilingual news anchor with more than 20 years of experience in broadcast journalism.</p>
+      <p style="margin:0;font-size:16px;line-height:1.7;color:#4A5578">James has been featured on CNN en Español, MSNBC, NewsNation, Telemundo, Univision, Fox Sports, CBS 4, NBC 6, RT America and Canal 9 in Argentina. He was a contributor to the Rick Sanchez Show and Prohibido Callarse on Mira TV, and serves as TV producer and anchor at MDC-TV, where he hosts The Talk with James Pierre.</p>
+      <p style="margin:0;font-size:16px;line-height:1.7;color:#4A5578">He is fluent in English, French, Creole and Spanish. Beyond the newsroom, he hosts events for nonprofits and educational institutions and speaks to students across South Florida and the Caribbean.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1px;background:#CDD4E6;border:1px solid #CDD4E6;border-radius:12px;overflow:hidden">
+        <div style="background:#FFFFFF;padding:20px"><div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8A8A8A;margin-bottom:8px">Awards</div><div style="font-size:15px;line-height:1.5">Emmy · Davey · Telly · Communicator</div></div>
+        <div style="background:#FFFFFF;padding:20px"><div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8A8A8A;margin-bottom:8px">Education</div><div style="font-size:15px;line-height:1.5">B.S. Miami Dade College · M.A. St. Thomas University</div></div>
+        <div style="background:#FFFFFF;padding:20px"><div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8A8A8A;margin-bottom:8px">Based in</div><div style="font-size:15px;line-height:1.5">Miami, Florida</div></div>
+      </div>
+    </div>
+  </section>
+  <section style="background:#050B22;color:#FFFFFF">
+    <div style="max-width:1320px;margin:0 auto;padding:88px 32px;display:flex;flex-direction:column;gap:40px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:24px 56px;align-items:end">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#FF8A9B">Awards &amp; recognition</span>
+          <h2 style="margin:0;font-family:'Playfair Display',serif;font-size:clamp(38px,4.6vw,64px);font-weight:700;letter-spacing:-0.02em;line-height:1">Four-time Emmy Award winner</h2>
+        </div>
+        <p style="margin:0;font-family:'Lora',serif;font-size:18px;line-height:1.6;color:#C3CCE6">Honored by the National Academy of Television Arts &amp; Sciences, Suncoast Chapter, alongside multiple Davey, Telly and Communicator awards over two decades in radio and television.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:16px">
+        <div style="grid-column:1 / -1"><div style="position:relative;aspect-ratio:16/7;border-radius:12px;overflow:hidden;background:#DDE3F0"><image-slot id="award-team" shape="rect" src="assets/emmy-team.jpg"></image-slot></div></div>
+        <div style="position:relative;aspect-ratio:3/4;border-radius:12px;overflow:hidden;background:#DDE3F0"><image-slot id="award-portrait" shape="rect" src="assets/emmy-portrait.jpg"></image-slot></div>
+        <div style="position:relative;aspect-ratio:3/4;border-radius:12px;overflow:hidden;background:#DDE3F0"><image-slot id="award-look" shape="rect" src="assets/emmy-trophy-look.jpg"></image-slot></div>
+        <div style="position:relative;aspect-ratio:3/4;border-radius:12px;overflow:hidden;background:#DDE3F0"><image-slot id="award-standing" shape="rect" src="assets/emmy-standing.jpg"></image-slot></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));border-top:1px solid rgba(247,248,252,0.14)">
+        <div style="padding:22px 20px 0 0;display:flex;flex-direction:column;gap:6px"><span style="font-family:'Oswald',sans-serif;font-size:38px;font-weight:700;color:#FF8A9B;line-height:1">4×</span><span style="font-size:14px;color:#C3CCE6">Emmy Awards</span></div>
+        <div style="padding:22px 20px 0 0;display:flex;flex-direction:column;gap:6px"><span style="font-family:'Oswald',sans-serif;font-size:38px;font-weight:700;line-height:1">Davey</span><span style="font-size:14px;color:#C3CCE6">Multiple awards</span></div>
+        <div style="padding:22px 20px 0 0;display:flex;flex-direction:column;gap:6px"><span style="font-family:'Oswald',sans-serif;font-size:38px;font-weight:700;line-height:1">Telly</span><span style="font-size:14px;color:#C3CCE6">Multiple awards</span></div>
+        <div style="padding:22px 20px 0 0;display:flex;flex-direction:column;gap:6px"><span style="font-family:'Oswald',sans-serif;font-size:38px;font-weight:700;line-height:1">Communicator</span><span style="font-size:14px;color:#C3CCE6">Multiple awards</span></div>
+      </div>
+    </div>
+  </section>
+  <section style="max-width:1320px;margin:0 auto;padding:72px 32px 72px">
+    <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034;margin-bottom:20px">On set, on stage, in the field</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:16px">
+      <div style="position:relative;aspect-ratio:3/4;border-radius:12px;overflow:hidden"><image-slot id="about-g1" shape="rect" src="assets/james-field.png"></image-slot></div>
+      <div style="position:relative;aspect-ratio:3/4;border-radius:12px;overflow:hidden"><image-slot id="about-g2" shape="rect" src="assets/james-beige.png"></image-slot></div>
+      <div style="position:relative;aspect-ratio:3/4;border-radius:12px;overflow:hidden"><image-slot id="about-g3" shape="rect" src="assets/james-stage.png"></image-slot></div>
+      <div style="position:relative;aspect-ratio:3/4;border-radius:12px;overflow:hidden"><image-slot id="about-g4b" shape="rect" src="assets/event-stage-gold.jpg"></image-slot></div>
+      <div style="position:relative;aspect-ratio:3/4;border-radius:12px;overflow:hidden"><image-slot id="about-g5b" shape="rect" src="assets/event-smile-blue.jpg"></image-slot></div>
+    </div>
+  </section>
+  <section style="background:#E6EBF8">
+    <div style="max-width:1320px;margin:0 auto;padding:72px 32px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:48px">
+      <div>
+        <h2 style="margin:0 0 14px;font-family:'Playfair Display',serif;font-size:40px;font-weight:700;letter-spacing:-0.02em">Book James</h2>
+        <p style="margin:0;font-size:16px;line-height:1.6;color:#00209F;max-width:440px">Freelance reporting, on-air commentary in four languages, event hosting and speaking engagements.</p>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+        <button onClick="{{ goBookingEvents }}" style="background:#0B1F5C;color:#FFFFFF;border:0;border-radius:999px;padding:16px 26px;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#00209F">Book an appearance</button>
+        <button onClick="{{ goBookingAds }}" style="background:transparent;color:#0B1F5C;border:1px solid #0B1F5C;border-radius:999px;padding:16px 26px;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#FFFFFF">Advertise on James Reports</button>
+      </div>
+    </div>
+  </section>
+</div>
+</sc-if>
+
+<!-- ============ BOOKING ============ -->
+<sc-if value="{{ isBooking }}" hint-placeholder-val="{{ false }}">
+<div>
+  <section style="background:#081230;color:#FFFFFF;overflow:hidden">
+    <div style="max-width:1320px;margin:0 auto;padding:72px 32px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:56px;align-items:end">
+      <div style="display:flex;flex-direction:column;gap:26px;padding-bottom:72px">
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#FF8A9B">Booking &amp; partnerships</span>
+        <h1 style="margin:0;font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(44px,5.8vw,84px);line-height:0.98;letter-spacing:-0.03em;text-wrap:balance">Bring James to your stage and your audience.</h1>
+        <p style="margin:0;font-family:'Lora',serif;font-size:20px;line-height:1.55;color:#C3CCE6;max-width:560px">Event hosting, keynotes, public appearances, sponsored coverage and advertising on James Reports. In English, French, Haitian Creole and Spanish.</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button onClick="{{ pickEventsTab }}" style="background:#D21034;color:#FFFFFF;border:0;border-radius:999px;padding:16px 26px;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#B00D2B">Book an appearance</button>
+          <button onClick="{{ pickAdsTab }}" style="background:transparent;color:#FFFFFF;border:1px solid rgba(247,248,252,0.4);border-radius:999px;padding:16px 26px;font-size:15px;font-weight:600;cursor:pointer" style-hover="border-color:#FFFFFF">Advertise with us</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:rgba(247,248,252,0.14);border-top:1px solid rgba(247,248,252,0.14);margin-top:12px">
+          <div style="background:#081230;padding:20px 20px 0 0"><div style="font-family:'Oswald',sans-serif;font-size:34px;font-weight:700;line-height:1">4×</div><div style="font-size:13px;color:#C3CCE6;margin-top:6px">Emmy Award winner</div></div>
+          <div style="background:#081230;padding:20px 20px 0"><div style="font-family:'Oswald',sans-serif;font-size:34px;font-weight:700;line-height:1">4</div><div style="font-size:13px;color:#C3CCE6;margin-top:6px">Languages on stage</div></div>
+          <div style="background:#081230;padding:20px 0 0 20px"><div style="font-family:'Oswald',sans-serif;font-size:34px;font-weight:700;line-height:1">1,000+</div><div style="font-size:13px;color:#C3CCE6;margin-top:6px">Commercials produced</div></div>
+        </div>
+      </div>
+      <div style="position:relative;aspect-ratio:4/5;border-radius:20px 20px 0 0;overflow:hidden;background:#0B1F5C">
+        <image-slot id="booking-hero" shape="rect" src="assets/event-smile-blue.jpg" placeholder="James hosting on stage"></image-slot>
+        <div style="position:absolute;left:0;right:0;bottom:0;display:grid;grid-template-rows:6px 6px;pointer-events:none"><div style="background:#00209F"></div><div style="background:#D21034"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section style="background:#FFFFFF;border-bottom:1px solid #E4E8F2">
+    <div style="max-width:1320px;margin:0 auto;padding:22px 32px;display:flex;gap:32px;align-items:center;flex-wrap:wrap">
+      <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8A8A8A">James has produced for</span>
+      <div style="display:flex;gap:28px;flex-wrap:wrap;align-items:center;flex:1">
+        <sc-for list="{{ clients }}" as="c" hint-placeholder-count="8">
+          <span style="font-family:'Oswald',sans-serif;font-weight:500;font-size:17px;letter-spacing:0.04em;text-transform:uppercase;color:#4A5578">{{ c }}</span>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section style="background:#F7F8FC;border-bottom:1px solid #E4E8F2">
+    <div style="max-width:1320px;margin:0 auto;padding:14px 32px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <sc-for list="{{ bookTabs }}" as="t" hint-placeholder-count="2">
+        <button onClick="{{ t.pick }}" style="border-radius:999px;padding:12px 22px;font-size:15px;font-weight:600;cursor:pointer;background:{{ t.bg }};color:{{ t.fg }};border:1px solid {{ t.bd }}">{{ t.label }}</button>
+      </sc-for>
+      <span style="flex:1"></span>
+      <button onClick="{{ scrollToForm }}" style="background:none;border:0;border-bottom:1px solid #0B1F5C;padding:4px 0;font-size:14px;font-weight:600;color:#0B1F5C;cursor:pointer">Go to request form ↓</button>
+    </div>
+  </section>
+
+  <sc-if value="{{ tabEvents }}" hint-placeholder-val="{{ true }}">
+  <section style="max-width:1320px;margin:0 auto;padding:80px 32px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:24px 56px;align-items:end;margin-bottom:44px">
+      <h2 style="margin:0;font-family:'Playfair Display',serif;font-size:clamp(34px,4vw,54px);font-weight:700;letter-spacing:-0.02em;line-height:1.05">Hosting, appearances and sponsored coverage</h2>
+      <p style="margin:0;font-size:17px;line-height:1.6;color:#4A5578">From galas in Miami to classrooms in the Caribbean, James brings two decades of live broadcast experience to every room.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:24px">
+
+        <article style="background:#FFFFFF;border-radius:20px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.07);display:flex;flex-direction:column">
+          <div style="position:relative;aspect-ratio:4/3;background:#DDE3F0"><image-slot id="svc-host-2" shape="rect" src="assets/event-hosting-floor.jpg"></image-slot></div>
+          <div style="padding:28px;display:flex;flex-direction:column;gap:14px;flex:1">
+            <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034">Event hosting</span>
+            <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:28px;font-weight:700;line-height:1.15">Master of ceremonies</h3>
+            <p style="margin:0;font-size:15px;line-height:1.6;color:#4A5578">Galas, award ceremonies, conferences and festivals, run on time and on script, with seamless switches between languages.</p>
+            <div style="display:flex;flex-direction:column;border-top:1px solid #E4E8F2;margin-top:auto">
+              <span style="display:flex;gap:12px;align-items:baseline;padding:11px 0;border-bottom:1px solid #E4E8F2;font-size:14px;color:#0B1F5C"><span style="width:6px;height:6px;border-radius:999px;background:#D21034;flex-shrink:0;transform:translateY(-2px)"></span>Galas &amp; award nights</span>
+              <span style="display:flex;gap:12px;align-items:baseline;padding:11px 0;border-bottom:1px solid #E4E8F2;font-size:14px;color:#0B1F5C"><span style="width:6px;height:6px;border-radius:999px;background:#D21034;flex-shrink:0;transform:translateY(-2px)"></span>Conferences &amp; panels</span>
+              <span style="display:flex;gap:12px;align-items:baseline;padding:11px 0;border-bottom:1px solid #E4E8F2;font-size:14px;color:#0B1F5C"><span style="width:6px;height:6px;border-radius:999px;background:#D21034;flex-shrink:0;transform:translateY(-2px)"></span>Cultural festivals</span>
+              <span style="display:flex;gap:12px;align-items:baseline;padding:11px 0;border-bottom:1px solid #E4E8F2;font-size:14px;color:#0B1F5C"><span style="width:6px;height:6px;border-radius:999px;background:#D21034;flex-shrink:0;transform:translateY(-2px)"></span>Nonprofit fundraisers</span>
+            </div>
+          </div>
+        </article>
+
+        <article style="background:#FFFFFF;border-radius:20px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.07);display:flex;flex-direction:column">
+          <div style="position:relative;aspect-ratio:4/3;background:#DDE3F0"><image-slot id="svc-appear-2" shape="rect" src="assets/event-stage-gold.jpg"></image-slot></div>
+          <div style="padding:28px;display:flex;flex-direction:column;gap:14px;flex:1">
+            <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034">Public appearances</span>
+            <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:28px;font-weight:700;line-height:1.15">Keynotes &amp; appearances</h3>
+            <p style="margin:0;font-size:15px;line-height:1.6;color:#4A5578">Motivational talks, moderated conversations and guest appearances for schools, companies and community organizations.</p>
+            <div style="display:flex;flex-direction:column;border-top:1px solid #E4E8F2;margin-top:auto">
+              <span style="display:flex;gap:12px;align-items:baseline;padding:11px 0;border-bottom:1px solid #E4E8F2;font-size:14px;color:#0B1F5C"><span style="width:6px;height:6px;border-radius:999px;background:#D21034;flex-shrink:0;transform:translateY(-2px)"></span>Keynote &amp; motivational talks</span>
+              <span style="display:flex;gap:12px;align-items:baseline;padding:11px 0;border-bottom:1px solid #E4E8F2;font-size:14px;color:#0B1F5C"><span style="width:6px;height:6px;border-radius:999px;background:#D21034;flex-shrink:0;transform:translateY(-2px)"></span>Panel moderation</span>
+              <span style="display:flex;gap:12px;align-items:baseline;padding:11px 0;border-bottom:1px solid #E4E8F2;font-size:14px;color:#0B1F5C"><span style="width:6px;height:6px;border-radius:999px;background:#D21034;flex-shrink:0;transform:translateY(-2px)"></span>School &amp; university visits</span>
+              <span style="display:flex;gap:12px;align-items:baseline;padding:11px 0;border-bottom:1px solid #E4E8F2;font-size:14px;color:#0B1F5C"><span style="width:6px;height:6px;border-radius:999px;background:#D21034;flex-shrink:0;transform:translateY(-2px)"></span>Red carpet &amp; media appearances</span>
+            </div>
+          </div>
+        </article>
+
+        <article style="background:#FFFFFF;border-radius:20px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.07);display:flex;flex-direction:column">
+          <div style="position:relative;aspect-ratio:4/3;background:#DDE3F0"><image-slot id="svc-sponsored" shape="rect" src="assets/james-field.png"></image-slot></div>
+          <div style="padding:28px;display:flex;flex-direction:column;gap:14px;flex:1">
+            <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034">Sponsored coverage</span>
+            <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:28px;font-weight:700;line-height:1.15">Sponsored reports</h3>
+            <p style="margin:0;font-size:15px;line-height:1.6;color:#4A5578">Field reporting and produced segments about your event, launch or initiative, published on James Reports and labeled as sponsored.</p>
+            <div style="display:flex;flex-direction:column;border-top:1px solid #E4E8F2;margin-top:auto">
+              <span style="display:flex;gap:12px;align-items:baseline;padding:11px 0;border-bottom:1px solid #E4E8F2;font-size:14px;color:#0B1F5C"><span style="width:6px;height:6px;border-radius:999px;background:#D21034;flex-shrink:0;transform:translateY(-2px)"></span>On-site event coverage</span>
+              <span style="display:flex;gap:12px;align-items:baseline;padding:11px 0;border-bottom:1px solid #E4E8F2;font-size:14px;color:#0B1F5C"><span style="width:6px;height:6px;border-radius:999px;background:#D21034;flex-shrink:0;transform:translateY(-2px)"></span>Produced feature segments</span>
+              <span style="display:flex;gap:12px;align-items:baseline;padding:11px 0;border-bottom:1px solid #E4E8F2;font-size:14px;color:#0B1F5C"><span style="width:6px;height:6px;border-radius:999px;background:#D21034;flex-shrink:0;transform:translateY(-2px)"></span>Interview packages</span>
+              <span style="display:flex;gap:12px;align-items:baseline;padding:11px 0;border-bottom:1px solid #E4E8F2;font-size:14px;color:#0B1F5C"><span style="width:6px;height:6px;border-radius:999px;background:#D21034;flex-shrink:0;transform:translateY(-2px)"></span>Multilingual cut-downs for social</span>
+            </div>
+          </div>
+        </article>
+    </div>
+  </section>
+  </sc-if>
+
+  <sc-if value="{{ tabAds }}" hint-placeholder-val="{{ false }}">
+  <section style="max-width:1320px;margin:0 auto;padding:80px 32px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:24px 56px;align-items:end;margin-bottom:44px">
+      <h2 style="margin:0;font-family:'Playfair Display',serif;font-size:clamp(34px,4vw,54px);font-weight:700;letter-spacing:-0.02em;line-height:1.05">Reach the Haitian diaspora, in its own languages</h2>
+      <div style="display:flex;flex-direction:column;gap:16px;align-items:flex-start">
+        <p style="margin:0;font-size:17px;line-height:1.6;color:#4A5578">James Reports reaches Haitian and Caribbean audiences across the United States, Canada, France and Haiti, with Spanish-speaking viewers across South Florida.</p>
+        <button onClick="{{ getKit }}" style="background:#0B1F5C;color:#FFFFFF;border:0;border-radius:999px;padding:14px 22px;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#00209F">{{ kitLabel }}</button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr));gap:20px">
+
+        <article style="background:#FFFFFF;border:1px solid #E4E8F2;border-radius:12px;padding:28px;display:flex;flex-direction:column;gap:12px" style-hover="border-color:#00209F">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;color:#D21034;letter-spacing:0.08em">01</span><span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8A8A8A">YouTube · Audio</span></div>
+          <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:24px;font-weight:700;line-height:1.2">Episode sponsor</h3>
+          <p style="margin:0;font-size:15px;line-height:1.55;color:#4A5578">A host-read message at the open and mid-point of an episode, recorded by James in the language of the episode.</p>
+          <span style="margin-top:auto;padding-top:12px;border-top:1px solid #E4E8F2;font-size:13px;color:#0B1F5C">Pre-roll 30s · Mid-roll 60s</span>
+        </article>
+
+        <article style="background:#FFFFFF;border:1px solid #E4E8F2;border-radius:12px;padding:28px;display:flex;flex-direction:column;gap:12px" style-hover="border-color:#00209F">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;color:#D21034;letter-spacing:0.08em">02</span><span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8A8A8A">Multi-episode</span></div>
+          <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:24px;font-weight:700;line-height:1.2">Series presenting partner</h3>
+          <p style="margin:0;font-size:15px;line-height:1.55;color:#4A5578">Exclusive "presented by" billing across a themed series, such as immigration explainers or election coverage.</p>
+          <span style="margin-top:auto;padding-top:12px;border-top:1px solid #E4E8F2;font-size:13px;color:#0B1F5C">4–8 episodes · Logo on screen</span>
+        </article>
+
+        <article style="background:#FFFFFF;border:1px solid #E4E8F2;border-radius:12px;padding:28px;display:flex;flex-direction:column;gap:12px" style-hover="border-color:#00209F">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;color:#D21034;letter-spacing:0.08em">03</span><span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8A8A8A">Newsletter</span></div>
+          <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:24px;font-weight:700;line-height:1.2">Briefing placement</h3>
+          <p style="margin:0;font-size:15px;line-height:1.55;color:#4A5578">A single sponsor slot in the weekly James Reports briefing, delivered in the subscriber’s chosen language.</p>
+          <span style="margin-top:auto;padding-top:12px;border-top:1px solid #E4E8F2;font-size:13px;color:#0B1F5C">Logo, 60 words, one link</span>
+        </article>
+
+        <article style="background:#FFFFFF;border:1px solid #E4E8F2;border-radius:12px;padding:28px;display:flex;flex-direction:column;gap:12px" style-hover="border-color:#00209F">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;color:#D21034;letter-spacing:0.08em">04</span><span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8A8A8A">YouTube · Instagram · Facebook</span></div>
+          <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:24px;font-weight:700;line-height:1.2">Shorts &amp; social</h3>
+          <p style="margin:0;font-size:15px;line-height:1.55;color:#4A5578">Vertical video integrations produced with James for short-form feeds.</p>
+          <span style="margin-top:auto;padding-top:12px;border-top:1px solid #E4E8F2;font-size:13px;color:#0B1F5C">15–60s vertical · Up to 3 cuts</span>
+        </article>
+
+        <article style="background:#FFFFFF;border:1px solid #E4E8F2;border-radius:12px;padding:28px;display:flex;flex-direction:column;gap:12px" style-hover="border-color:#00209F">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;color:#D21034;letter-spacing:0.08em">05</span><span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8A8A8A">Public service</span></div>
+          <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:24px;font-weight:700;line-height:1.2">Community PSA</h3>
+          <p style="margin:0;font-size:15px;line-height:1.55;color:#4A5578">Announcements for public health, legal aid, census and civic participation. Reduced rates for nonprofits.</p>
+          <span style="margin-top:auto;padding-top:12px;border-top:1px solid #E4E8F2;font-size:13px;color:#0B1F5C">30s spot · Four languages</span>
+        </article>
+
+        <article style="background:#FFFFFF;border:1px solid #E4E8F2;border-radius:12px;padding:28px;display:flex;flex-direction:column;gap:12px" style-hover="border-color:#00209F">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;color:#D21034;letter-spacing:0.08em">06</span><span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8A8A8A">Branded content</span></div>
+          <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:24px;font-weight:700;line-height:1.2">Custom production</h3>
+          <p style="margin:0;font-size:15px;line-height:1.55;color:#4A5578">Commercials and campaigns produced by James and his team, drawing on more than 1,000 spots to date.</p>
+          <span style="margin-top:auto;padding-top:12px;border-top:1px solid #E4E8F2;font-size:13px;color:#0B1F5C">Script, shoot, edit, deliver</span>
+        </article>
+    </div>
+    <div style="margin-top:32px;background:#E6EBF8;border-radius:20px;padding:32px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:24px 48px">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#00209F">Editorial standards</span>
+        <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:26px;font-weight:700;line-height:1.2">Advertisers don’t shape the news.</h3>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:15px;line-height:1.55;color:#0B1F5C">
+        <span>Sponsored segments are labeled on screen and in show notes.</span>
+        <span>Sponsors have no say over news coverage, guests or questions.</span>
+        <span>Political campaign advertising is reviewed case by case.</span>
+      </div>
+    </div>
+  </section>
+  </sc-if>
+
+  <section style="background:#FFFFFF;border-top:1px solid #E4E8F2">
+    <div style="max-width:1320px;margin:0 auto;padding:80px 32px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px 40px;flex-wrap:wrap;margin-bottom:32px">
+        <div>
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034;margin-bottom:10px">Recently hosted</div>
+          <h2 style="margin:0;font-family:'Playfair Display',serif;font-size:clamp(32px,3.6vw,48px);font-weight:700;letter-spacing:-0.02em;line-height:1.05">FowenNurses Gala</h2>
+        </div>
+        <p style="margin:0;font-size:16px;line-height:1.6;color:#4A5578;max-width:460px">James served as master of ceremonies for the FowenNurses celebration.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:16px">
+        <div style="grid-column:1 / -1"><div style="position:relative;aspect-ratio:21/9;border-radius:12px;overflow:hidden;background:#DDE3F0"><image-slot id="gal-fowen-group" shape="rect" src="assets/event-fowen-group.jpg"></image-slot></div></div>
+        <div style="position:relative;aspect-ratio:4/3;border-radius:12px;overflow:hidden;background:#DDE3F0"><image-slot id="gal-fowen-floor" shape="rect" src="assets/event-hosting-floor.jpg"></image-slot></div>
+        <div style="position:relative;aspect-ratio:4/3;border-radius:12px;overflow:hidden;background:#DDE3F0"><image-slot id="gal-fowen-mic" shape="rect" src="assets/event-mic-blue.jpg"></image-slot></div>
+        <div style="position:relative;aspect-ratio:4/3;border-radius:12px;overflow:hidden;background:#DDE3F0;object-position:top"><image-slot id="gal-fowen-backdrop" shape="rect" src="assets/event-fowen-backdrop.jpg"></image-slot></div>
+      </div>
+    </div>
+  </section>
+
+  <section style="background:#0B1F5C;color:#FFFFFF">
+    <div style="max-width:1320px;margin:0 auto;padding:72px 32px">
+      <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#FF8A9B">How it works</span>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:0;margin-top:28px;border-top:1px solid rgba(247,248,252,0.14);border-left:1px solid rgba(247,248,252,0.14)">
+        <div style="background:#0B1F5C;padding:28px;border-right:1px solid rgba(247,248,252,0.14);border-bottom:1px solid rgba(247,248,252,0.14);display:flex;flex-direction:column;gap:10px"><span style="font-family:'Oswald',sans-serif;font-size:40px;font-weight:700;color:#FF8A9B;line-height:1">01</span><span style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700">Send a request</span><span style="font-size:14px;line-height:1.55;color:#C3CCE6">Tell us the date, place, audience and what you have in mind.</span></div>
+        <div style="background:#0B1F5C;padding:28px;border-right:1px solid rgba(247,248,252,0.14);border-bottom:1px solid rgba(247,248,252,0.14);display:flex;flex-direction:column;gap:10px"><span style="font-family:'Oswald',sans-serif;font-size:40px;font-weight:700;color:#FF8A9B;line-height:1">02</span><span style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700">Proposal</span><span style="font-size:14px;line-height:1.55;color:#C3CCE6">Availability, scope and rates within two business days.</span></div>
+        <div style="background:#0B1F5C;padding:28px;border-right:1px solid rgba(247,248,252,0.14);border-bottom:1px solid rgba(247,248,252,0.14);display:flex;flex-direction:column;gap:10px"><span style="font-family:'Oswald',sans-serif;font-size:40px;font-weight:700;color:#FF8A9B;line-height:1">03</span><span style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700">Confirm</span><span style="font-size:14px;line-height:1.55;color:#C3CCE6">Agreement, deposit and a prep call with James.</span></div>
+        <div style="background:#0B1F5C;padding:28px;border-right:1px solid rgba(247,248,252,0.14);border-bottom:1px solid rgba(247,248,252,0.14);display:flex;flex-direction:column;gap:10px"><span style="font-family:'Oswald',sans-serif;font-size:40px;font-weight:700;color:#FF8A9B;line-height:1">04</span><span style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700">Show day</span><span style="font-size:14px;line-height:1.55;color:#C3CCE6">James arrives prepared, on script and in the right language.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="booking-form" style="max-width:1320px;margin:0 auto;padding:88px 32px 96px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:56px;align-items:start">
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034">Request form</span>
+      <h2 style="margin:0;font-family:'Playfair Display',serif;font-size:clamp(34px,4vw,54px);font-weight:700;letter-spacing:-0.02em;line-height:1.05">Start a booking or ad request</h2>
+      <p style="margin:0;font-size:16px;line-height:1.6;color:#4A5578">A member of James’s team reviews every request and replies within two business days.</p>
+      <div style="display:flex;flex-direction:column;gap:6px;padding-top:20px;border-top:1px solid #CDD4E6;font-size:15px">
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8A8A8A">Direct</span>
+        <a href="mailto:booking@jamesreports.com" style="font-weight:600">booking@jamesreports.com</a>
+        <a href="mailto:ads@jamesreports.com" style="font-weight:600">ads@jamesreports.com</a>
+      </div>
+    </div>
+    <div style="background:#FFFFFF;border-radius:20px;box-shadow:0 8px 24px rgba(0,0,0,0.11);padding:36px">
+      <sc-if value="{{ reqSent }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034">Request received</span>
+          <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:34px;font-weight:700">Thank you. We’ll be in touch.</h3>
+          <p style="margin:0;font-size:16px;line-height:1.6;color:#4A5578">Your {{ reqTypeLabel }} request is logged as <b style="color:#0B1F5C">{{ reqRef }}</b>. A confirmation with next steps is on its way to your inbox.</p>
+          <button onClick="{{ resetReq }}" style="align-self:flex-start;background:none;border:0;border-bottom:1px solid #0B1F5C;padding:4px 0;font-size:14px;font-weight:600;color:#0B1F5C;cursor:pointer">Send another request</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ reqOpen }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:24px">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8A8A8A">Request type</span>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px">
+              <sc-for list="{{ reqTypes }}" as="r" hint-placeholder-count="4">
+                <button onClick="{{ r.pick }}" style="text-align:left;padding:14px 16px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;background:{{ r.bg }};color:{{ r.fg }};border:1px solid {{ r.bd }}">{{ r.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+            <input placeholder="Full name" style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;background:#FFFFFF;font-size:15px;color:#0B1F5C;width:100%;outline:0">
+            <input placeholder="Organization or brand" style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;background:#FFFFFF;font-size:15px;color:#0B1F5C;width:100%;outline:0">
+            <input placeholder="Email" style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;background:#FFFFFF;font-size:15px;color:#0B1F5C;width:100%;outline:0">
+            <input placeholder="Phone" style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;background:#FFFFFF;font-size:15px;color:#0B1F5C;width:100%;outline:0">
+          </div>
+          <sc-if value="{{ tabEvents }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+                <input type="date" style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;background:#FFFFFF;font-size:15px;color:#0B1F5C;width:100%;outline:0">
+                <input placeholder="City or venue" style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;background:#FFFFFF;font-size:15px;color:#0B1F5C;width:100%;outline:0">
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                <span style="font-size:14px;color:#4A5578;margin-right:6px">Expected audience</span>
+                <sc-for list="{{ audSizes }}" as="a" hint-placeholder-count="4">
+                  <button onClick="{{ a.pick }}" style="border-radius:999px;padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer;background:{{ a.bg }};color:{{ a.fg }};border:1px solid {{ a.bd }}">{{ a.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ tabAds }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+              <input placeholder="Campaign start date" style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;background:#FFFFFF;font-size:15px;color:#0B1F5C;width:100%;outline:0">
+              <input placeholder="Product or message" style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;background:#FFFFFF;font-size:15px;color:#0B1F5C;width:100%;outline:0">
+            </div>
+          </sc-if>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8A8A8A">Languages</span>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <sc-for list="{{ reqLangs }}" as="l" hint-placeholder-count="4">
+                <button onClick="{{ l.pick }}" style="border-radius:999px;padding:8px 14px;font-size:14px;font-weight:500;cursor:pointer;background:{{ l.bg }};color:{{ l.fg }};border:1px solid {{ l.bd }}">{{ l.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8A8A8A">Budget range</span>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <sc-for list="{{ budgets }}" as="b" hint-placeholder-count="4">
+                <button onClick="{{ b.pick }}" style="border-radius:999px;padding:8px 14px;font-size:14px;font-weight:500;cursor:pointer;background:{{ b.bg }};color:{{ b.fg }};border:1px solid {{ b.bd }}">{{ b.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <textarea placeholder="Tell us about the event, campaign or story" rows="4" style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;background:#FFFFFF;font-size:15px;color:#0B1F5C;width:100%;outline:0;resize:vertical;font-family:inherit;line-height:1.5"></textarea>
+          <button onClick="{{ sendReq }}" style="background:#D21034;color:#FFFFFF;border:0;border-radius:999px;padding:18px;font-size:16px;font-weight:600;cursor:pointer" style-hover="background:#B00D2B" style-active="transform:scale(0.97)">Send request</button>
+          <p style="margin:0;font-size:12px;line-height:1.5;color:#8A8A8A;text-align:center">Your details are used only to respond to this request.</p>
+        </div>
+      </sc-if>
+    </div>
+  </section>
+</div>
+</sc-if>
+
+<!-- ============ VIP CLUB ============ -->
+<sc-if value="{{ isVip }}" hint-placeholder-val="{{ false }}">
+<div>
+  <section style="background:#050B22;color:#FFFFFF;overflow:hidden">
+    <div style="max-width:1320px;margin:0 auto;padding:80px 32px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:56px;align-items:center">
+      <div style="display:flex;flex-direction:column;gap:26px">
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#FF8A9B">Membership</span>
+        <h1 style="margin:0;font-family:'Oswald',sans-serif;font-weight:700;font-size:clamp(56px,7.4vw,112px);line-height:0.9;letter-spacing:0.01em;text-transform:uppercase">VIP <span style="color:#FF8A9B">Club</span></h1>
+        <p style="margin:0;font-family:'Lora',serif;font-size:20px;line-height:1.55;color:#C3CCE6;max-width:540px">Early access to every episode, a seat at each podcast premiere and a direct line to James. Your membership funds the reporting.</p>
+        <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+          <span style="font-family:'Oswald',sans-serif;font-size:64px;font-weight:700;line-height:1">$45.99</span>
+          <span style="font-size:16px;color:#C3CCE6">per month · cancel anytime</span>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button onClick="{{ vipToCheckout }}" style="background:#D21034;color:#FFFFFF;border:0;border-radius:999px;padding:17px 30px;font-size:16px;font-weight:600;cursor:pointer" style-hover="background:#B00D2B" style-active="transform:scale(0.97)">Join the VIP Club</button>
+          <button onClick="{{ vipToBenefits }}" style="background:transparent;color:#FFFFFF;border:1px solid rgba(247,248,252,0.4);border-radius:999px;padding:17px 30px;font-size:16px;font-weight:600;cursor:pointer" style-hover="border-color:#FFFFFF">See the benefits</button>
+        </div>
+      </div>
+      <div style="position:relative;display:grid;place-items:center;padding:24px 0">
+        <div style="position:relative;width:100%;max-width:440px;aspect-ratio:4/5;border-radius:20px;overflow:hidden;background:#0B1F5C">
+          <image-slot id="vip-hero" shape="rect" src="assets/emmy-portrait.jpg" placeholder="James Pierre portrait"></image-slot>
+        </div>
+        <div style="position:absolute;left:0;bottom:0;width:min(78%,340px);aspect-ratio:1.586;border-radius:16px;background:#00209F;box-shadow:0 8px 24px rgba(0,0,0,0.4);overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;padding:20px 22px">
+          <div style="position:absolute;left:0;right:0;bottom:0;height:42%;background:#D21034"></div>
+          <div style="position:relative;display:flex;justify-content:space-between;align-items:flex-start">
+            <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:18px;letter-spacing:0.04em;line-height:1">JAMES<br>REPORTS</span>
+            <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:13px;letter-spacing:0.12em;border:1px solid rgba(255,255,255,0.6);border-radius:4px;padding:3px 7px">VIP</span>
+          </div>
+          <div style="position:relative;display:flex;justify-content:space-between;align-items:flex-end;gap:10px">
+            <span style="display:flex;flex-direction:column;gap:3px"><span style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;opacity:0.85">Member</span><span style="font-size:15px;font-weight:600">{{ vipCardName }}</span></span>
+            <span style="font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:0.08em;font-variant-numeric:tabular-nums">{{ vipCardId }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-rows:4px 4px"><div style="background:#00209F"></div><div style="background:#D21034"></div></div>
+  </section>
+
+  <section id="vip-benefits" style="max-width:1320px;margin:0 auto;padding:88px 32px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:24px 56px;align-items:end;margin-bottom:44px">
+      <div>
+        <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034;margin-bottom:10px">What VIP members get</div>
+        <h2 style="margin:0;font-family:'Playfair Display',serif;font-size:clamp(34px,4vw,54px);font-weight:700;letter-spacing:-0.02em;line-height:1.05">First in line for everything James makes</h2>
+      </div>
+      <p style="margin:0;font-size:17px;line-height:1.6;color:#4A5578">Members see and hear it before anyone else, join the conversation live and get closer to the reporting.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));gap:20px">
+
+        <div style="background:#FFFFFF;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:28px;display:flex;flex-direction:column;gap:12px;transition:transform 250ms ease-out" style-hover="transform:translateY(-2px)">
+          <span style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.08em;color:#D21034">01</span>
+          <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:23px;font-weight:700;line-height:1.2">Early access to every episode</h3>
+          <p style="margin:0;font-size:15px;line-height:1.55;color:#4A5578">Watch and listen to new interviews 48 hours before they go public on YouTube and the site.</p>
+        </div>
+
+        <div style="background:#FFFFFF;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:28px;display:flex;flex-direction:column;gap:12px;transition:transform 250ms ease-out" style-hover="transform:translateY(-2px)">
+          <span style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.08em;color:#D21034">02</span>
+          <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:23px;font-weight:700;line-height:1.2">VIP seat at podcast premieres</h3>
+          <p style="margin:0;font-size:15px;line-height:1.55;color:#4A5578">Join each premiere live with James in a members-only room, with your questions answered on air.</p>
+        </div>
+
+        <div style="background:#FFFFFF;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:28px;display:flex;flex-direction:column;gap:12px;transition:transform 250ms ease-out" style-hover="transform:translateY(-2px)">
+          <span style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.08em;color:#D21034">03</span>
+          <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:23px;font-weight:700;line-height:1.2">Monthly live Q&amp;A with James</h3>
+          <p style="margin:0;font-size:15px;line-height:1.55;color:#4A5578">A private video session every month to ask about the stories, the guests and what comes next.</p>
+        </div>
+
+        <div style="background:#FFFFFF;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:28px;display:flex;flex-direction:column;gap:12px;transition:transform 250ms ease-out" style-hover="transform:translateY(-2px)">
+          <span style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.08em;color:#D21034">04</span>
+          <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:23px;font-weight:700;line-height:1.2">Ad-free, everywhere</h3>
+          <p style="margin:0;font-size:15px;line-height:1.55;color:#4A5578">Every episode, report and TV channel on the site without sponsor messages or interruptions.</p>
+        </div>
+
+        <div style="background:#FFFFFF;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:28px;display:flex;flex-direction:column;gap:12px;transition:transform 250ms ease-out" style-hover="transform:translateY(-2px)">
+          <span style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.08em;color:#D21034">05</span>
+          <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:23px;font-weight:700;line-height:1.2">Exclusive VIP content</h3>
+          <p style="margin:0;font-size:15px;line-height:1.55;color:#4A5578">Extended cuts, unreleased interview segments, behind-the-scenes footage and reporter’s notes.</p>
+        </div>
+
+        <div style="background:#FFFFFF;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:28px;display:flex;flex-direction:column;gap:12px;transition:transform 250ms ease-out" style-hover="transform:translateY(-2px)">
+          <span style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.08em;color:#D21034">06</span>
+          <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:23px;font-weight:700;line-height:1.2">Priority event invitations</h3>
+          <p style="margin:0;font-size:15px;line-height:1.55;color:#4A5578">First invitations and reserved seating at galas, live tapings and events James hosts.</p>
+        </div>
+
+        <div style="background:#FFFFFF;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:28px;display:flex;flex-direction:column;gap:12px;transition:transform 250ms ease-out" style-hover="transform:translateY(-2px)">
+          <span style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.08em;color:#D21034">07</span>
+          <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:23px;font-weight:700;line-height:1.2">The VIP briefing</h3>
+          <p style="margin:0;font-size:15px;line-height:1.55;color:#4A5578">A members-only weekly letter from James in English, Français, Kreyòl or Español.</p>
+        </div>
+
+        <div style="background:#FFFFFF;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:28px;display:flex;flex-direction:column;gap:12px;transition:transform 250ms ease-out" style-hover="transform:translateY(-2px)">
+          <span style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.08em;color:#D21034">08</span>
+          <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:23px;font-weight:700;line-height:1.2">Your name in the credits</h3>
+          <p style="margin:0;font-size:15px;line-height:1.55;color:#4A5578">VIP members are thanked by name in the credits of the episodes they help fund.</p>
+        </div>
+    </div>
+  </section>
+
+  <section style="background:#FFFFFF;border-top:1px solid #E4E8F2;border-bottom:1px solid #E4E8F2">
+    <div style="max-width:1100px;margin:0 auto;padding:80px 32px">
+      <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034;margin-bottom:10px">Compare</div>
+      <h2 style="margin:0 0 32px;font-family:'Playfair Display',serif;font-size:clamp(30px,3.4vw,44px);font-weight:700;letter-spacing:-0.02em;line-height:1.1">Free, Supporter or VIP</h2>
+      <div style="overflow-x:auto">
+        <div style="min-width:560px;display:grid;grid-template-columns:minmax(0,2fr) repeat(3,minmax(0,1fr));border-top:2px solid #0B1F5C">
+          <span style="padding:16px 12px 16px 0;font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8A8A8A">Benefit</span>
+          <span style="padding:16px 12px;text-align:center;font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8A8A8A">Free</span>
+          <span style="padding:16px 12px;text-align:center;font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8A8A8A">Supporter</span>
+          <span style="padding:16px 12px;text-align:center;font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#FFFFFF;background:#D21034;border-radius:8px 8px 0 0">VIP</span>
+          <sc-for list="{{ vipCompare }}" as="r" hint-placeholder-count="7">
+            <span style="padding:16px 12px 16px 0;border-top:1px solid #E4E8F2;font-size:15px;color:#0B1F5C">{{ r.label }}</span>
+            <span style="padding:16px 12px;border-top:1px solid #E4E8F2;text-align:center;font-size:15px;font-weight:600;color:{{ r.freeColor }}">{{ r.free }}</span>
+            <span style="padding:16px 12px;border-top:1px solid #E4E8F2;text-align:center;font-size:15px;font-weight:600;color:{{ r.supColor }}">{{ r.sup }}</span>
+            <span style="padding:16px 12px;border-top:1px solid #F5C9D1;text-align:center;font-size:15px;font-weight:700;color:#D21034;background:#FDECEF">{{ r.vip }}</span>
+          </sc-for>
+          <span style="padding:16px 12px 16px 0;border-top:2px solid #0B1F5C;font-size:15px;font-weight:700;color:#0B1F5C">Price</span>
+          <span style="padding:16px 12px;border-top:2px solid #0B1F5C;text-align:center;font-size:15px;font-weight:600">$0</span>
+          <span style="padding:16px 12px;border-top:2px solid #0B1F5C;text-align:center;font-size:15px;font-weight:600">$5/mo</span>
+          <span style="padding:16px 12px;border-top:2px solid #0B1F5C;text-align:center;font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;color:#FFFFFF;background:#D21034;border-radius:0 0 8px 8px">$45.99/mo</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="vip-checkout" style="max-width:1320px;margin:0 auto;padding:88px 32px 96px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));gap:56px;align-items:start">
+    <div style="display:flex;flex-direction:column;gap:22px">
+      <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034">Join</div>
+      <h2 style="margin:0;font-family:'Playfair Display',serif;font-size:clamp(34px,4vw,54px);font-weight:700;letter-spacing:-0.02em;line-height:1.05">Become a VIP member</h2>
+      <div style="background:#0B1F5C;color:#FFFFFF;border-radius:12px;padding:24px;display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px"><span style="font-size:16px;font-weight:600">James Reports VIP Club</span><span style="font-family:'Oswald',sans-serif;font-size:24px;font-weight:700">$45.99</span></div>
+        <div style="display:flex;justify-content:space-between;gap:12px;font-size:14px;color:#C3CCE6"><span>Billed monthly</span><span>Renews {{ vipRenew }}</span></div>
+        <div style="height:1px;background:rgba(247,248,252,0.14)"></div>
+        <div style="display:flex;justify-content:space-between;gap:12px;font-size:16px;font-weight:700"><span>Due today</span><span>$45.99</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column">
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8A8A8A;margin-bottom:6px">Questions</span>
+        <sc-for list="{{ vipFaq }}" as="f" hint-placeholder-count="4">
+          <div style="border-top:1px solid #CDD4E6">
+            <button onClick="{{ f.toggle }}" style="width:100%;display:flex;justify-content:space-between;gap:16px;align-items:center;text-align:left;background:none;border:0;padding:18px 0;font-size:16px;font-weight:600;color:#0B1F5C;cursor:pointer">{{ f.q }}<span style="font-size:20px;font-weight:400;color:#D21034">{{ f.sign }}</span></button>
+            <sc-if value="{{ f.open }}" hint-placeholder-val="{{ false }}"><p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#4A5578">{{ f.a }}</p></sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="background:#FFFFFF;border-radius:20px;box-shadow:0 8px 24px rgba(0,0,0,0.11);padding:36px">
+      <sc-if value="{{ vipJoined }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034">Welcome to the club</span>
+          <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:36px;font-weight:700;line-height:1.1">Mèsi, you’re a VIP.</h3>
+          <p style="margin:0;font-size:16px;line-height:1.6;color:#4A5578">Your membership <b style="color:#0B1F5C">{{ vipCardId }}</b> is active. Early access starts now, and your invitation to Thursday’s 8 PM ET premiere is on its way to your inbox.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button onClick="{{ goEpisodes }}" style="background:#D21034;color:#FFFFFF;border:0;border-radius:999px;padding:14px 22px;font-size:14px;font-weight:600;cursor:pointer">Watch early releases</button>
+            <button onClick="{{ goWatch }}" style="background:transparent;color:#0B1F5C;border:1px solid #0B1F5C;border-radius:999px;padding:14px 22px;font-size:14px;font-weight:600;cursor:pointer">Open James Reports TV</button>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ vipForm }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:22px">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+            <input value="{{ vipName }}" onChange="{{ setVipName }}" placeholder="Full name" style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;background:#FFFFFF;font-size:15px;color:#0B1F5C;width:100%;outline:0;min-width:0">
+            <input placeholder="Email" style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;background:#FFFFFF;font-size:15px;color:#0B1F5C;width:100%;outline:0;min-width:0">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8A8A8A">Payment method</span>
+            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+              <sc-for list="{{ vipMethods }}" as="m" hint-placeholder-count="6">
+                <button onClick="{{ m.pick }}" style="padding:14px 6px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;background:{{ m.bg }};color:{{ m.fg }};border:1px solid {{ m.bd }}">{{ m.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <sc-if value="{{ vipIsCard }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <input placeholder="Card number" inputmode="numeric" style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;background:#FFFFFF;font-size:15px;color:#0B1F5C;width:100%;outline:0;min-width:0">
+              <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">
+                <input placeholder="MM / YY" style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;background:#FFFFFF;font-size:15px;color:#0B1F5C;width:100%;outline:0;min-width:0">
+                <input placeholder="CVC" style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;background:#FFFFFF;font-size:15px;color:#0B1F5C;width:100%;outline:0;min-width:0">
+                <input placeholder="ZIP" style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;background:#FFFFFF;font-size:15px;color:#0B1F5C;width:100%;outline:0;min-width:0">
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ vipIsOther }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#F7F8FC;border:1px solid #E4E8F2;border-radius:8px;padding:16px;font-size:15px;line-height:1.5;color:#0B1F5C">{{ vipMethodNote }}</div>
+          </sc-if>
+          <label style="display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.5;color:#4A5578"><input type="checkbox" checked="{{ vipAgree }}" onChange="{{ toggleVipAgree }}" style="accent-color:#D21034;width:18px;height:18px;margin-top:1px;flex-shrink:0">I agree to be billed $45.99 each month until I cancel.</label>
+          <button onClick="{{ vipJoin }}" style="background:{{ vipCtaBg }};color:#FFFFFF;border:0;border-radius:999px;padding:18px;font-size:16px;font-weight:600;cursor:pointer" style-active="transform:scale(0.97)">{{ vipCta }}</button>
+          <p style="margin:0;font-size:12px;line-height:1.5;color:#8A8A8A;text-align:center">Secure, encrypted payment. Cancel anytime from your account.</p>
+        </div>
+      </sc-if>
+    </div>
+  </section>
+</div>
+</sc-if>
+
+<!-- ============ SUPPORT ============ -->
+<sc-if value="{{ isSupport }}" hint-placeholder-val="{{ false }}">
+<section style="max-width:1320px;margin:0 auto;padding:72px 32px 96px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:64px;align-items:start">
+  <div style="display:flex;flex-direction:column;gap:24px">
+    <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034">Support</div>
+    <h1 style="margin:0;font-family:'Playfair Display',serif;font-size:clamp(44px,6vw,80px);font-weight:700;letter-spacing:-0.03em;line-height:1;text-wrap:balance">Keep the reporting independent.</h1>
+    <p style="margin:0;font-family:'Lora',serif;font-size:19px;line-height:1.6;color:#4A5578">Every dollar goes to field reporting, travel, four-language translation and production. James Reports carries no corporate owners.</p>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <sc-for list="{{ tiers }}" as="t" hint-placeholder-count="3">
+        <button onClick="{{ t.pick }}" style="text-align:left;display:grid;grid-template-columns:1fr auto;gap:8px 20px;padding:22px 24px;border-radius:12px;cursor:pointer;background:{{ t.bg }};border:1px solid {{ t.bd }};color:#0B1F5C">
+          <span style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700">{{ t.name }}</span>
+          <span style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:#D21034">{{ t.price }}</span>
+          <span style="grid-column:1 / -1;font-size:14px;line-height:1.5;color:#4A5578">{{ t.perks }}</span>
+        </button>
+      </sc-for>
+    </div>
+  </div>
+  <div style="background:#FFFFFF;border-radius:20px;box-shadow:0 8px 24px rgba(0,0,0,0.11);padding:36px;display:flex;flex-direction:column;gap:22px;position:sticky;top:100px">
+    <sc-if value="{{ donated }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:14px;padding:12px 0">
+        <span style="width:56px;height:56px;border-radius:999px;background:#D21034;display:grid;place-items:center;font-family:'Playfair Display',serif;font-weight:700;font-size:22px;color:#081230">JR</span>
+        <h2 style="margin:0;font-family:'Playfair Display',serif;font-size:34px;font-weight:700">Mèsi anpil.</h2>
+        <p style="margin:0;font-size:16px;line-height:1.6;color:#4A5578">Your {{ donateSummary }} gift supports the next episode. A receipt is on its way to your inbox.</p>
+        <button onClick="{{ resetDonate }}" style="align-self:flex-start;background:none;border:0;border-bottom:1px solid #0B1F5C;padding:4px 0;font-size:14px;font-weight:600;color:#0B1F5C;cursor:pointer">Make another gift</button>
+      </div>
+    </sc-if>
+    <sc-if value="{{ notDonated }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:22px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;background:#EEF1F8;border-radius:999px;padding:4px">
+          <sc-for list="{{ freqs }}" as="f" hint-placeholder-count="2">
+            <button onClick="{{ f.pick }}" style="border:0;border-radius:999px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;background:{{ f.bg }};color:{{ f.fg }}">{{ f.label }}</button>
+          </sc-for>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+          <sc-for list="{{ amounts }}" as="a" hint-placeholder-count="6">
+            <button onClick="{{ a.pick }}" style="padding:16px 0;border-radius:8px;font-size:17px;font-weight:600;cursor:pointer;background:{{ a.bg }};color:{{ a.fg }};border:1px solid {{ a.bd }}">{{ a.label }}</button>
+          </sc-for>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;border:1px solid #CDD4E6;border-radius:8px;padding:0 16px;background:#FFFFFF">
+          <span style="font-weight:600;color:#8A8A8A">$</span>
+          <input value="{{ customVal }}" onChange="{{ setCustom }}" placeholder="Other amount" inputmode="numeric" style="flex:1;border:0;outline:0;padding:14px 0;font-size:15px;background:transparent;color:#0B1F5C">
+        </label>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8A8A8A">Pay with</span>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+            <sc-for list="{{ methods }}" as="m" hint-placeholder-count="4">
+              <button onClick="{{ m.pick }}" style="padding:12px 0;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:{{ m.bg }};color:{{ m.fg }};border:1px solid {{ m.bd }}">{{ m.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <input placeholder="Email for receipt" style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;background:#FFFFFF;font-size:15px;color:#0B1F5C">
+        <label style="display:flex;gap:10px;align-items:center;font-size:14px;color:#4A5578"><input type="checkbox" checked="{{ coverFees }}" onChange="{{ toggleFees }}" style="accent-color:#D21034;width:18px;height:18px">Cover processing fees so 100% reaches James</label>
+        <button onClick="{{ donate }}" style="background:#D21034;color:#FFFFFF;border:0;border-radius:999px;padding:18px;font-size:16px;font-weight:600;cursor:pointer" style-hover="background:#B00D2B" style-active="transform:scale(0.97)">{{ donateCta }}</button>
+        <p style="margin:0;font-size:12px;line-height:1.5;color:#8A8A8A;text-align:center">Secure payment. Cancel a monthly gift anytime.</p>
+      </div>
+    </sc-if>
+  </div>
+</section>
+</sc-if>
+
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+<section style="background:#FFFFFF;border-top:1px solid #E4E8F2">
+  <div style="max-width:1320px;margin:0 auto;padding:64px 32px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:40px 56px;align-items:center">
+    <div style="display:flex;flex-direction:column;gap:18px">
+      <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034">Our sponsors</span>
+      <span style="font-family:'Oswald',sans-serif;font-size:clamp(44px,5.4vw,72px);font-weight:700;letter-spacing:0.01em;line-height:0.95;color:#0B1F5C">Fowen<span style="color:#D21034">Nurses</span></span>
+      <p style="margin:0;font-size:16px;line-height:1.6;color:#4A5578;max-width:480px">Thank you to FowenNurses for supporting James Reports and independent journalism for the Haitian community.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <button onClick="{{ goBookingAds }}" style="background:#0B1F5C;color:#FFFFFF;border:0;border-radius:999px;padding:14px 22px;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#00209F">Become a sponsor</button>
+      </div>
+    </div>
+    <div style="position:relative;aspect-ratio:16/9;border-radius:20px;overflow:hidden;background:#DDE3F0">
+      <image-slot id="home-sponsor-fowen" shape="rect" src="assets/event-fowen-group.jpg" placeholder="FowenNurses logo or event photo"></image-slot>
+    </div>
+  </div>
+</section>
+</sc-if>
+
+<!-- ============ NEWSLETTER + FOOTER ============ -->
+<section style="background:#0B1F5C;color:#F7F8FC">
+  <div style="max-width:1320px;margin:0 auto;padding:72px 32px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:40px;align-items:center">
+    <div>
+      <h2 style="margin:0 0 12px;font-family:'Playfair Display',serif;font-size:clamp(32px,4vw,48px);font-weight:700;letter-spacing:-0.02em;line-height:1.05">The James Reports briefing</h2>
+      <p style="margin:0;font-size:16px;line-height:1.6;color:#C3CCE6;max-width:480px">New episodes, TPS and immigration updates, and news from Haiti. Weekly, in your language.</p>
+    </div>
+    <sc-if value="{{ nlDone }}" hint-placeholder-val="{{ false }}">
+      <div style="font-family:'Lora',serif;font-size:20px;color:#FF8A9B">You're subscribed. Look for the first briefing on Friday.</div>
+    </sc-if>
+    <sc-if value="{{ nlOpen }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <input placeholder="Your email" style="flex:1;min-width:220px;padding:16px 20px;border:1px solid rgba(247,248,252,0.3);border-radius:999px;background:transparent;color:#F7F8FC;font-size:15px;outline:0">
+        <button onClick="{{ nlSubmit }}" style="background:#D21034;color:#FFFFFF;border:0;border-radius:999px;padding:16px 26px;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#B00D2B">Subscribe</button>
+      </div>
+    </sc-if>
+  </div>
+</section>
+<section id="guest-request" style="background:#050B22;color:#FFFFFF;border-top:1px solid rgba(247,248,252,0.08)">
+  <div style="max-width:1320px;margin:0 auto;padding:80px 32px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));gap:48px 64px;align-items:start">
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#FF8A9B">Be on the show</span>
+      <h2 style="margin:0;font-family:'Playfair Display',serif;font-size:clamp(34px,4vw,54px);font-weight:700;letter-spacing:-0.02em;line-height:1.05;text-wrap:balance">Request to be a guest on James Reports</h2>
+      <p style="margin:0;font-family:'Lora',serif;font-size:18px;line-height:1.6;color:#C3CCE6;max-width:480px">Experts, community leaders, artists, athletes and people with a story to tell. Tell us who you are and what you’d like to talk about.</p>
+      <div style="position:relative;aspect-ratio:16/10;border-radius:12px;overflow:hidden;background:#0B1F5C;max-width:520px">
+        <image-slot id="guest-photo" shape="rect" src="assets/james-blue-interview.png" placeholder="James interviewing a guest"></image-slot>
+      </div>
+    </div>
+    <div style="background:#081230;border:1px solid rgba(247,248,252,0.1);border-radius:20px;padding:32px">
+      <sc-if value="{{ guestSent }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#FF8A9B">Request received</span>
+          <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:32px;font-weight:700;line-height:1.15">Thank you. The team will review your pitch.</h3>
+          <p style="margin:0;font-size:16px;line-height:1.6;color:#C3CCE6">Reference <b style="color:#FFFFFF">{{ guestRef }}</b>. If it’s a fit, a producer will reach out to schedule a pre-interview.</p>
+          <button onClick="{{ guestReset }}" style="align-self:flex-start;background:none;border:0;border-bottom:1px solid #FFFFFF;padding:4px 0;font-size:14px;font-weight:600;color:#FFFFFF;cursor:pointer">Send another request</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ guestOpen }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+            <input placeholder="Full name" style="padding:14px 16px;border:1px solid rgba(247,248,252,0.22);border-radius:8px;background:rgba(247,248,252,0.06);font-size:15px;color:#FFFFFF;width:100%;outline:0;min-width:0">
+            <input placeholder="Title or organization" style="padding:14px 16px;border:1px solid rgba(247,248,252,0.22);border-radius:8px;background:rgba(247,248,252,0.06);font-size:15px;color:#FFFFFF;width:100%;outline:0;min-width:0">
+            <input placeholder="Email" style="padding:14px 16px;border:1px solid rgba(247,248,252,0.22);border-radius:8px;background:rgba(247,248,252,0.06);font-size:15px;color:#FFFFFF;width:100%;outline:0;min-width:0">
+            <input placeholder="Phone" style="padding:14px 16px;border:1px solid rgba(247,248,252,0.22);border-radius:8px;background:rgba(247,248,252,0.06);font-size:15px;color:#FFFFFF;width:100%;outline:0;min-width:0">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8E9AC0">Topic</span>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <sc-for list="{{ guestTopics }}" as="t" hint-placeholder-count="7">
+                <button onClick="{{ t.pick }}" style="border-radius:999px;padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer;background:{{ t.bg }};color:{{ t.fg }};border:1px solid {{ t.bd }}">{{ t.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8E9AC0">Interview language</span>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <sc-for list="{{ guestLangs }}" as="t" hint-placeholder-count="4">
+                <button onClick="{{ t.pick }}" style="border-radius:999px;padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer;background:{{ t.bg }};color:{{ t.fg }};border:1px solid {{ t.bd }}">{{ t.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8E9AC0">Format</span>
+            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+              <sc-for list="{{ guestFormats }}" as="t" hint-placeholder-count="2">
+                <button onClick="{{ t.pick }}" style="padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;background:{{ t.bg }};color:{{ t.fg }};border:1px solid {{ t.bd }}">{{ t.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <input placeholder="Website or social links" style="padding:14px 16px;border:1px solid rgba(247,248,252,0.22);border-radius:8px;background:rgba(247,248,252,0.06);font-size:15px;color:#FFFFFF;width:100%;outline:0;min-width:0">
+          <textarea placeholder="Your story or the topic you’d like to discuss" rows="4" style="padding:14px 16px;border:1px solid rgba(247,248,252,0.22);border-radius:8px;background:rgba(247,248,252,0.06);font-size:15px;color:#FFFFFF;width:100%;outline:0;min-width:0;resize:vertical;font-family:inherit;line-height:1.5"></textarea>
+          <button onClick="{{ guestSubmit }}" style="background:#D21034;color:#FFFFFF;border:0;border-radius:999px;padding:17px;font-size:16px;font-weight:600;cursor:pointer" style-hover="background:#B00D2B" style-active="transform:scale(0.97)">Submit guest request</button>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+</section>
+<footer style="background:#081230;color:#C3CCE6">
+  <div style="max-width:1320px;margin:0 auto;padding:64px 32px 44px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:40px 32px">
+    <div style="display:flex;flex-direction:column;gap:14px;grid-column:span 1;min-width:0">
+      <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:26px;letter-spacing:0.02em;text-transform:uppercase;color:#FFFFFF">James <span style="color:#FF8A9B">Reports</span></span>
+      <span style="font-family:'Lora',serif;font-style:italic;font-size:15px;line-height:1.5">Trusted coverage of immigration, politics and Haiti. Miami, Florida.</span>
+      <span style="font-size:13px;color:#8E9AC0">English · Français · Kreyòl · Español</span>
+      <div style="display:grid;grid-template-rows:3px 3px;width:48px;margin-top:4px"><div style="background:#00209F"></div><div style="background:#D21034"></div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#FF8A9B">Explore</span>
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="8">
+        <button onClick="{{ n.go }}" style="background:none;border:0;padding:0;text-align:left;color:#C3CCE6;font-size:14px;cursor:pointer" style-hover="color:#FF8A9B">{{ n.label }}</button>
+      </sc-for>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#FF8A9B">Guests</span>
+      <button onClick="{{ goGuest }}" style="background:none;border:0;padding:0;text-align:left;color:#FFFFFF;font-size:14px;font-weight:600;cursor:pointer" style-hover="color:#FF8A9B">Guest request</button>
+      <button onClick="{{ goRelease }}" style="background:none;border:0;padding:0;text-align:left;color:#FFFFFF;font-size:14px;font-weight:600;cursor:pointer" style-hover="color:#FF8A9B">Talent release form</button>
+      <span style="font-size:12px;line-height:1.5;color:#8E9AC0;margin-top:4px">Booked guests sign the release before recording.</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#FF8A9B">Partners</span>
+      <button onClick="{{ goBookingEvents }}" style="background:none;border:0;padding:0;text-align:left;color:#C3CCE6;font-size:14px;cursor:pointer" style-hover="color:#FF8A9B">Bookings</button>
+      <button onClick="{{ goBookingAds }}" style="background:none;border:0;padding:0;text-align:left;color:#C3CCE6;font-size:14px;cursor:pointer" style-hover="color:#FF8A9B">Sponsors &amp; advertising</button>
+      <button onClick="{{ goVip }}" style="background:none;border:0;padding:0;text-align:left;color:#C3CCE6;font-size:14px;cursor:pointer" style-hover="color:#FF8A9B">VIP Club</button>
+      <button onClick="{{ goSupport }}" style="background:none;border:0;padding:0;text-align:left;color:#C3CCE6;font-size:14px;cursor:pointer" style-hover="color:#FF8A9B">Donate</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;font-size:14px">
+      <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#FF8A9B">Follow</span>
+      <a href="https://www.youtube.com/@JamesReports" target="_blank" style="color:#C3CCE6">YouTube · @JamesReports</a>
+      <a href="https://www.facebook.com/pages/JAMES-PIERRE/284513110117" target="_blank" style="color:#C3CCE6">Facebook</a>
+      <a href="https://twitter.com/lovejamespierre" target="_blank" style="color:#C3CCE6">X · @lovejamespierre</a>
+      <a href="https://vimeo.com/jamespierre" target="_blank" style="color:#C3CCE6">Vimeo</a>
+    </div>
+  </div>
+  <div style="max-width:1320px;margin:0 auto;padding:20px 32px 28px;border-top:1px solid rgba(247,248,252,0.1);font-size:12px;color:#8E9AC0;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><span>© 2026 James Reports. All rights reserved.</span><span style="display:flex;gap:20px"><span>Privacy</span><span>Terms</span></span></div>
+</footer>
+
+<!-- ============ MINI PLAYER ============ -->
+<sc-if value="{{ hasNow }}" hint-placeholder-val="{{ false }}">
+<div style="position:fixed;left:16px;right:16px;bottom:16px;z-index:50;max-width:1100px;margin:0 auto;background:#081230;color:#F7F8FC;border-radius:20px;box-shadow:0 8px 24px rgba(0,0,0,0.3);padding:14px 18px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:18px;align-items:center">
+  <button onClick="{{ togglePlay }}" style="width:48px;height:48px;border-radius:999px;border:0;background:#D21034;display:grid;place-items:center;cursor:pointer">
+    <sc-if value="{{ isPlaying }}" hint-placeholder-val="{{ false }}"><span style="display:flex;gap:4px"><span style="width:4px;height:16px;background:#FFFFFF;border-radius:1px"></span><span style="width:4px;height:16px;background:#FFFFFF;border-radius:1px"></span></span></sc-if>
+    <sc-if value="{{ isPaused }}" hint-placeholder-val="{{ true }}"><span style="width:0;height:0;margin-left:3px;border-left:13px solid #FFFFFF;border-top:8px solid transparent;border-bottom:8px solid transparent"></span></sc-if>
+  </button>
+  <div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+    <div style="display:flex;justify-content:space-between;gap:12px;font-size:13px">
+      <span onClick="{{ now.open }}" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;font-weight:600">{{ now.num }} · {{ now.title }}</span>
+      <span style="font-variant-numeric:tabular-nums;color:#C3CCE6;flex-shrink:0">{{ elapsed }} / {{ now.dur }}</span>
+    </div>
+    <div onClick="{{ seekBar }}" style="height:6px;border-radius:999px;background:rgba(247,248,252,0.15);cursor:pointer;overflow:hidden"><div style="height:100%;width:{{ progressPct }};background:#D21034"></div></div>
+  </div>
+  <div style="display:flex;gap:6px;align-items:center">
+    <button onClick="{{ cycleSpeed }}" style="background:transparent;border:1px solid rgba(247,248,252,0.3);color:#F7F8FC;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer">{{ speedLabel }}</button>
+    <button onClick="{{ closePlayer }}" style="background:transparent;border:0;color:#C3CCE6;font-size:22px;line-height:1;cursor:pointer;padding:4px 8px">×</button>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ SUBSCRIBE MODAL ============ -->
+<sc-if value="{{ subOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closeSub }}" style="position:fixed;inset:0;z-index:60;background:rgba(8,18,48,0.6);backdrop-filter:blur(6px);display:grid;place-items:center;padding:20px">
+  <div onClick="{{ stop }}" style="width:100%;max-width:520px;background:#FFFFFF;border-radius:20px;box-shadow:0 8px 24px rgba(0,0,0,0.2);padding:36px;display:flex;flex-direction:column;gap:20px">
+    <sc-if value="{{ subDone }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <h2 style="margin:0;font-family:'Playfair Display',serif;font-size:34px;font-weight:700">Welcome aboard.</h2>
+        <p style="margin:0;font-size:16px;line-height:1.6;color:#4A5578">You'll get premiere alerts and the weekly briefing. Subscribe on YouTube too, so you never miss a live premiere.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <a href="https://www.youtube.com/@JamesReports" target="_blank" style="background:#0B1F5C;color:#F7F8FC;border-radius:999px;padding:14px 22px;font-size:14px;font-weight:600">Subscribe on YouTube</a>
+          <button onClick="{{ closeSub }}" style="background:none;border:1px solid #CDD4E6;border-radius:999px;padding:14px 22px;font-size:14px;font-weight:600;color:#0B1F5C;cursor:pointer">Done</button>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ subForm }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
+          <div>
+            <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#D21034;margin-bottom:8px">Free</div>
+            <h2 style="margin:0;font-family:'Playfair Display',serif;font-size:32px;font-weight:700;line-height:1.1">Subscribe to James Reports</h2>
+          </div>
+          <button onClick="{{ closeSub }}" style="background:none;border:0;font-size:26px;line-height:1;color:#8A8A8A;cursor:pointer">×</button>
+        </div>
+        <input placeholder="Email address" style="padding:14px 16px;border:1px solid #CDD4E6;border-radius:8px;font-size:15px;color:#0B1F5C;background:#FFFFFF">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8A8A8A">Briefing language</span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <sc-for list="{{ subLangs }}" as="c" hint-placeholder-count="4">
+              <button onClick="{{ c.pick }}" style="border-radius:999px;padding:8px 14px;font-size:14px;font-weight:500;cursor:pointer;background:{{ c.bg }};color:{{ c.fg }};border:1px solid {{ c.bd }}">{{ c.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8A8A8A">Alerts</span>
+          <sc-for list="{{ alerts }}" as="al" hint-placeholder-count="3">
+            <label style="display:flex;gap:10px;align-items:center;font-size:15px;color:#0B1F5C"><input type="checkbox" checked="{{ al.on }}" onChange="{{ al.toggle }}" style="accent-color:#D21034;width:18px;height:18px">{{ al.label }}</label>
+          </sc-for>
+        </div>
+        <button onClick="{{ subSubmit }}" style="background:#D21034;color:#FFFFFF;border:0;border-radius:999px;padding:16px;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#B00D2B">Subscribe</button>
+      </div>
+    </sc-if>
+  </div>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showTicker&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Site&quot;},&quot;monthlyGoal&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:12000,&quot;tsType&quot;:&quot;number&quot;,&quot;min&quot;:1000,&quot;max&quot;:100000,&quot;step&quot;:500,&quot;unit&quot;:&quot;$&quot;,&quot;section&quot;:&quot;Fundraising&quot;},&quot;raised&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:8420,&quot;tsType&quot;:&quot;number&quot;,&quot;min&quot;:0,&quot;max&quot;:100000,&quot;step&quot;:100,&quot;unit&quot;:&quot;$&quot;,&quot;section&quot;:&quot;Fundraising&quot;},&quot;supporters&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:684,&quot;tsType&quot;:&quot;number&quot;,&quot;min&quot;:0,&quot;max&quot;:50000,&quot;step&quot;:10,&quot;section&quot;:&quot;Fundraising&quot;}}">
+class Component extends DCLogic {
+  state = { page: 'home', epId: 'e1', cat: 'All', lang: 'All', now: null, playing: false, t: 0, speed: 1,
+    subOpen: false, subDone: false, subLang: 'English', alerts: { premiere: true, briefing: true, breaking: false },
+    freq: 'monthly', amount: 25, custom: '', method: 'Card', tier: 'Insider', coverFees: true, donated: false,
+    nlDone: false, bookSent: false, shared: false, tvCh: 0, tvMuted: true, navMenu: false, clockT: Date.now(), ytList: 'UUXOdc4wPeeSxOOVakrf9wlg',
+    bookTab: 'events', reqType: 'Event hosting', aud: '100–500', rLangs: ['English', 'Kreyòl'], budget: '$2.5k–$10k', reqSent: false, reqRef: '', kit: false, vipMethod: 'Card', vipJoined: false, vipAgree: true, vipName: '', vipFaqOpen: 0, vipId: '', gTopic: 'Haiti', gLangs: ['English'], gFormat: 'One-on-one interview', guestSent: false, guestRef: '', relName: '', relSig: '', relMinor: false, relC: [false, false, false, false], relSigned: false, relRef: '' };
+
+  tvRef = React.createRef();
+  componentDidMount() {
+    this.clockTimer = setInterval(() => { if (this.state.page === 'watch') this.setState({ clockT: Date.now() }); }, 1000);
+    this.timer = setInterval(() => {
+      const s = this.state; if (!s.playing || !s.now) return;
+      const ep = this.eps().find(e => e.id === s.now);
+      this.setState({ t: Math.min(s.t + s.speed, ep.sec) });
+    }, 1000);
+  }
+  componentWillUnmount() { clearInterval(this.timer); clearInterval(this.clockTimer); }
+
+  eps() {
+    return [
+      { id: 'e1', num: 'EP 48', title: 'Haiti at a Crossroads: Security, Transition and the Road Ahead', dek: 'A long conversation on the transitional government, gang violence in Port-au-Prince, and what the diaspora can do now.', guest: 'With a former Haitian government official', cat: 'Haiti', lang: 'EN', dur: '58:12', sec: 3492, date: 'Sep 18, 2026' },
+      { id: 'e2', num: 'EP 47', title: 'TPS Explained: Your Questions, Answered', dek: 'An immigration attorney walks through eligibility, deadlines and re-registration, question by question.', guest: 'With an immigration attorney', cat: 'Immigration', lang: 'KR', dur: '42:30', sec: 2550, date: 'Sep 11, 2026' },
+      { id: 'e3', num: 'EP 46', title: 'Inside Little Haiti: Rent, Development and Staying Home', dek: 'Longtime residents and a city commissioner on housing costs and neighborhood change.', guest: 'With Miami community leaders', cat: 'Community', lang: 'EN', dur: '36:04', sec: 2164, date: 'Sep 4, 2026' },
+      { id: 'e4', num: 'EP 45', title: 'La diaspora haïtienne et le droit de vote', dek: 'Should Haitians abroad vote in national elections? Two constitutional scholars debate.', guest: 'Avec deux juristes', cat: 'Politics', lang: 'FR', dur: '47:50', sec: 2870, date: 'Aug 28, 2026' },
+      { id: 'e5', num: 'EP 44', title: 'Vuelos de deportación: siguiendo los números', dek: 'What the flight data shows about removals to the Caribbean and Latin America this year.', guest: 'Con un investigador de datos', cat: 'Immigration', lang: 'ES', dur: '31:18', sec: 1878, date: 'Aug 21, 2026' },
+      { id: 'e6', num: 'EP 43', title: 'Art as Record: Haitian Painters in Miami', dek: 'Three painters on memory, migration and building a market for Haitian art in South Florida.', guest: 'With three Haitian-American artists', cat: 'Culture', lang: 'EN', dur: '29:40', sec: 1780, date: 'Aug 14, 2026' },
+      { id: 'e7', num: 'EP 42', title: 'Konsèy pou nouvo imigran: travay, lekòl, sante', dek: 'Practical guidance for new arrivals on work permits, school enrollment and clinics.', guest: 'Avèk yon travayè sosyal', cat: 'Community', lang: 'KR', dur: '39:22', sec: 2362, date: 'Aug 7, 2026' },
+      { id: 'e8', num: 'EP 41', title: 'Who Decides Haiti\'s Aid? Following the Money', dek: 'Where international assistance goes, and who is accountable when it misses.', guest: 'With a development economist', cat: 'Politics', lang: 'EN', dur: '51:05', sec: 3065, date: 'Jul 31, 2026' },
+      { id: 'e9', num: 'EP 40', title: 'From Little Haiti to the Pros: Haitian-American Athletes', dek: 'Players and coaches on scholarships, scouting and representing Haiti on the field.', guest: 'With South Florida athletes and coaches', cat: 'Sports', lang: 'EN', dur: '34:15', sec: 2055, date: 'Jul 24, 2026' },
+      { id: 'e10', num: 'EP 39', title: 'Behind the Scenes: Haitian Voices in Film and Music', dek: 'Actors, directors and musicians on breaking into the industry and telling Haitian stories.', guest: 'With Haitian-American entertainers', cat: 'Entertainment', lang: 'EN', dur: '44:02', sec: 2642, date: 'Jul 17, 2026' }
+    ];
+  }
+
+  fmt(s) { s = Math.floor(s); const m = Math.floor(s / 60), r = s % 60; return m + ':' + String(r).padStart(2, '0'); }
+  scrollToId(id) { setTimeout(() => { const el = document.getElementById(id); if (!el) return; const hd = document.querySelector('header'); const off = (hd ? hd.getBoundingClientRect().height : 80) + 16; window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - off, behavior: 'smooth' }); }, 40); }
+  toForm() { setTimeout(() => { const el = document.getElementById('booking-form'); if (el) { const hd = document.querySelector('header'); const off = (hd ? hd.getBoundingClientRect().height : 80) + 24; window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - off, behavior: 'smooth' }); }; }, 60); }
+  go(page) { this.setState({ page }); window.scrollTo({ top: 0 }); }
+
+  renderVals() {
+    const s = this.state, p = this.props;
+    const covers = { Haiti: '#00209F', Immigration: '#D21034', Community: '#0B1F5C', Politics: '#8A0B24', Culture: '#081230', Sports: '#B00D2B', Entertainment: '#4A5578' };
+    const langNames = { EN: 'English', FR: 'Français', KR: 'Kreyòl', ES: 'Español' };
+    const eps = this.eps().map(e => ({ ...e, cover: covers[e.cat], langName: langNames[e.lang],
+      open: () => { this.setState({ epId: e.id, shared: false }); this.go('episode'); },
+      play: (ev) => { ev && ev.stopPropagation && ev.stopPropagation(); this.setState(st => ({ now: e.id, playing: true, t: st.now === e.id ? st.t : 0 })); } }));
+    const byId = id => eps.find(e => e.id === id);
+    const cur = byId(s.epId), now = s.now ? byId(s.now) : null;
+
+    const chip = (on) => on ? { bg: '#0B1F5C', fg: '#F7F8FC', bd: '#0B1F5C' } : { bg: 'transparent', fg: '#0B1F5C', bd: '#CDD4E6' };
+    const navDefs = [['home', 'Home'], ['watch', 'Watch'], ['podcast', 'Podcast'], ['episodes', 'Episodes'], ['reports', 'Reports'], ['archive', 'Archive'], ['about', 'About'], ['booking', 'Booking']];
+    const nav = navDefs.map(([k, label]) => { const on = s.page === k || (k === 'episodes' && s.page === 'episode') || (k === 'podcast' && s.page === 'guest');
+      const hasMenu = k === 'episodes' || k === 'podcast';
+      return { label, hasMenu, menuOpen: k === 'episodes' && s.navMenu === 'episodes', podOpen: k === 'podcast' && s.navMenu === 'podcast',
+        enter: () => hasMenu && this.setState({ navMenu: k }), leave: () => hasMenu && this.setState({ navMenu: false }),
+        go: () => { this.setState({ navMenu: false, ...(hasMenu ? { cat: 'All' } : {}) }); this.go(k); }, color: on ? '#0B1F5C' : '#4A5578', line: on ? '#D21034' : 'transparent' }; });
+    const topicDesc = { Haiti: 'Politics, security and daily life', Immigration: 'TPS, asylum, parole and deportation', Politics: 'Elections, policy and the diaspora vote', Community: 'South Florida neighborhoods and families', Culture: 'Art, music and Haitian identity', Sports: 'Athletes, teams and the games we follow', Entertainment: 'Film, TV, music and the people behind them' };
+    const topicMenu = Object.keys(topicDesc).map(c => ({ label: c, desc: topicDesc[c], color: covers[c], count: this.eps().filter(e => e.cat === c).length,
+      pick: () => { this.setState({ cat: c, lang: 'All', navMenu: false }); this.go('episodes'); } }));
+
+    const filtered = eps.filter(e => (s.cat === 'All' || e.cat === s.cat) && (s.lang === 'All' || e.lang === s.lang));
+    const catChips = ['All', 'Haiti', 'Immigration', 'Politics', 'Community', 'Culture', 'Sports', 'Entertainment'].map(c => ({ label: c, ...chip(s.cat === c), pick: () => this.setState({ cat: c }) }));
+    const langChips = ['All', 'EN', 'FR', 'KR', 'ES'].map(l => ({ label: l === 'All' ? 'All' : langNames[l], ...chip(s.lang === l), pick: () => this.setState({ lang: l }) }));
+
+    const reports = [
+      { cat: 'Immigration', title: 'What the latest TPS decision means for Haitian families in Florida', dek: 'Deadlines, who is covered, and where to get free legal help in Miami-Dade and Broward.', read: '8 min read', date: 'Sep 20, 2026' },
+      { cat: 'Haiti', title: 'Port-au-Prince, block by block: a map of who controls what', dek: 'Reporting from residents and local journalists on daily life under armed groups.', read: '12 min read', date: 'Sep 15, 2026' },
+      { cat: 'Politics', title: 'The diaspora vote: promises, obstacles and what comes next', dek: 'Why the question keeps returning, and what it would take to make it real.', read: '6 min read', date: 'Sep 9, 2026' },
+      { cat: 'Community', title: 'North Miami’s Haitian-owned businesses weather rising rents', dek: 'Owners on leases, loans and the customers who keep them open.', read: '7 min read', date: 'Sep 2, 2026' },
+      { cat: 'Immigration', title: 'Parole, asylum, TPS: a plain-language guide in four languages', dek: 'The differences between each status, explained without jargon.', read: '10 min read', date: 'Aug 26, 2026' },
+      { cat: 'Culture', title: 'Kompa at 70: the sound that crossed the water', dek: 'Musicians and producers on the genre’s past and its Miami future.', read: '5 min read', date: 'Aug 19, 2026' }
+    ];
+    const timeline = [
+      { y: '2004', e: 'Protests in Haiti that forced President Aristide into exile' },
+      { y: '2010', e: 'The earthquake that struck Haiti, and the cholera outbreak that followed' },
+      { y: '2017', e: 'TPS for Haitians' },
+      { y: '2021', e: 'Arrest of former Panamanian president Ricardo Martinelli' },
+      { y: 'Now', e: 'James Reports: independent interviews and reporting' }
+    ];
+    const base = 'https://www.jamespierre.com/';
+    const up = base + 'uploads/9/5/9/0/9590960/';
+    const archive = [
+      { name: 'Jawan Strader', show: 'The Talk with James Pierre', img: up + 'jawan.jpg', href: base + 'jawan-strader-is-on-tv.html' },
+      { name: 'PBS Miami · Haitian Voices', show: 'WPBT2', img: up + 'james-at-pbs-copy.jpg', href: base + 'james-pierre-on-wpbt-2---haitian-voices.html' },
+      { name: 'Shirley Thimothée Paul', show: 'The Talk with James Pierre', img: up + 'shirley-2.jpg', href: base + 'shirley-thimothee-paul-is-on-tv.html' },
+      { name: 'Suze Guillaume', show: 'The Talk with James Pierre', img: up + 'suze-guillaume.jpg', href: base + 'suze-guillaume-is-on-tv.html' },
+      { name: 'Jerry Delince', show: 'The Talk with James Pierre', img: up + 'jerry-delince.jpg', href: base + 'jerry-delince-is-on-tv.html' },
+      { name: 'With Farah Larrieux', show: 'WPBT2', img: up + '6707307.jpg', href: base + 'james-pierre-on-wpbt2-with-farah-larrieux.html' },
+      { name: 'Oswald', show: 'The Talk with James Pierre', img: up + '596f7762-8e15-4d09-94aa-ed3a26ea2a5c.jpg', href: base + 'oswald-is-on-tv.html' },
+      { name: 'James Pierre on WPBT2', show: 'WPBT2', img: up + '9124145.jpg', href: base + 'james-pierre-on-wpbt2.html' },
+      { name: 'James Pierre on WPBT2', show: 'WPBT2', img: up + '8394030.jpg', href: base + 'james-pierre-on-wpbt21.html' },
+      { name: 'Rev. Fr. Reginald', show: 'The Talk with James Pierre', img: up + '4852151.jpg', href: base + 'rev-fr-reginald.html' }
+    ];
+
+    const goal = p.monthlyGoal ?? 12000, supporters = p.supporters ?? 684, raised = p.raised ?? 8420;
+    const money = n => '$' + n.toLocaleString('en-US');
+    const amt = s.custom ? Number(s.custom) || 0 : s.amount;
+    const total = s.coverFees ? Math.round(amt * 1.03 * 100) / 100 : amt;
+    const sel = (on) => on ? { bg: '#0B1F5C', fg: '#F7F8FC', bd: '#0B1F5C' } : { bg: '#FFFFFF', fg: '#0B1F5C', bd: '#CDD4E6' };
+    const tiers = [
+      { name: 'Supporter', price: '$5/mo', v: 5, perks: 'Ad-free audio feed and the weekly briefing.' },
+      { name: 'Insider', price: '$15/mo', v: 15, perks: 'Early access to premieres, monthly live Q&A with James, full transcripts.' },
+      { name: 'Patron', price: '$50/mo', v: 50, perks: 'Everything in Insider, your name in episode credits, and an annual call with the newsroom.' }
+    ].map(t => ({ ...t, bg: s.tier === t.name ? '#FDECEF' : '#FFFFFF', bd: s.tier === t.name ? '#D21034' : '#E4E8F2',
+      pick: () => this.setState({ tier: t.name, amount: t.v, custom: '', freq: 'monthly' }) }));
+
+    const chapters = [['0:00', 'Introduction'], ['4:12', 'Where things stand today'], ['14:30', 'The view from the diaspora'], ['27:45', 'What the numbers show'], ['41:08', 'Questions from viewers'], ['52:20', 'What comes next']]
+      .map(([t, label]) => ({ t, label, seek: () => { const [m, ss] = t.split(':').map(Number); this.setState({ now: cur.id, playing: true, t: m * 60 + ss }); } }));
+
+    const toggleAlert = k => () => this.setState(st => ({ alerts: { ...st.alerts, [k]: !st.alerts[k] } }));
+
+    return {
+      showTicker: p.showTicker ?? true,
+      liveDot: React.createElement('span', { style: { width: 8, height: 8, borderRadius: 999, background: '#D32F2F', display: 'inline-block', animation: 'pulse 1.6s ease-in-out infinite' } }),
+      nav, goHome: () => this.go('home'), goEpisodes: () => this.go('episodes'), goSupport: () => this.go('support'),
+      goReports: () => this.go('reports'), goArchive: () => this.go('archive'),
+      isHome: s.page === 'home', isEpisodes: s.page === 'episodes', isEpisode: s.page === 'episode', isReports: s.page === 'reports',
+      isArchive: s.page === 'archive', isAbout: s.page === 'about', isSupport: s.page === 'support', isBooking: s.page === 'booking', isPodcast: s.page === 'podcast', isWatch: s.page === 'watch',
+      isVip: s.page === 'vip', isGuest: s.page === 'guest', isRelease: s.page === 'release', goRelease: () => this.go('release'),
+      ...(() => {
+        const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        const labels = ['I have read and understand the release terms above.', 'I grant James Reports permission to record and use my name, image, likeness and voice in the show and its promotion.', 'I assign to James Reports all copyright in the recordings of my appearance.', 'I agree that I will not receive compensation for my appearance.'];
+        const ready = s.relC.every(Boolean) && s.relSig.trim().length > 2;
+        return {
+          relName: s.relName, setRelName: e => this.setState({ relName: e.target.value }),
+          relSigInput: s.relSig, setRelSig: e => this.setState({ relSig: e.target.value }),
+          relSigPreview: s.relSig || 'Your signature', relSigColor: s.relSig ? '#0B1F5C' : '#CDD4E6',
+          relMinor: s.relMinor, toggleRelMinor: () => this.setState({ relMinor: !s.relMinor }), relGuardianSuffix: s.relMinor ? ' (parent or guardian)' : '',
+          relToday: today, relDate: today,
+          relChecks: labels.map((label, i) => ({ label, on: s.relC[i], toggle: () => this.setState(st => ({ relC: st.relC.map((v, j) => j === i ? !v : v) })) })),
+          relCta: ready ? 'Sign release' : 'Check all boxes and sign to continue', relCtaBg: ready ? '#D21034' : '#8E9AC0',
+          relSubmit: () => { if (!ready) return; this.setState({ relSigned: true, relRef: 'JR-TR-' + (10000 + Math.floor(Math.random() * 90000)) }); window.scrollTo({ top: 0, behavior: 'smooth' }); },
+          relSigned: s.relSigned, relOpen: !s.relSigned, relRef: s.relRef, relSig: s.relSig,
+          relPrint: () => window.print(),
+          relReset: () => this.setState({ relSigned: false, relSig: '', relName: '', relC: [false, false, false, false], relMinor: false })
+        };
+      })(),
+      podMenu: [
+        { label: 'Watch now', desc: 'Stream the latest podcast episodes', icon: '▶', color: '#D21034', pick: () => { this.setState({ navMenu: false }); this.go('podcast'); } },
+        { label: 'Guest request', desc: 'Apply to be a guest on the show', icon: 'JR', color: '#00209F', pick: () => { this.setState({ navMenu: false }); this.go('guest'); } }
+      ],
+      ...(() => { const dk = on => on ? { bg: '#FFFFFF', fg: '#050B22', bd: '#FFFFFF' } : { bg: 'transparent', fg: '#FFFFFF', bd: 'rgba(247,248,252,0.25)' };
+        return {
+          guestTopics: ['Haiti', 'Immigration', 'Politics', 'Community', 'Culture', 'Sports', 'Entertainment'].map(t => ({ label: t, ...dk(s.gTopic === t), pick: () => this.setState({ gTopic: t }) })),
+          guestLangs: ['English', 'Français', 'Kreyòl', 'Español'].map(l => ({ label: l, ...dk(s.gLangs.includes(l)), pick: () => this.setState(st => ({ gLangs: st.gLangs.includes(l) ? st.gLangs.filter(x => x !== l) : [...st.gLangs, l] })) })),
+          guestFormats: ['One-on-one interview', 'Remote · video call'].map(f => ({ label: f, ...dk(s.gFormat === f), pick: () => this.setState({ gFormat: f }) })),
+          guestSent: s.guestSent, guestOpen: !s.guestSent, guestRef: s.guestRef,
+          guestSubmit: () => this.setState({ guestSent: true, guestRef: 'JR-G-' + (100 + Math.floor(Math.random() * 900)) }),
+          guestReset: () => this.setState({ guestSent: false }),
+          goGuest: () => this.go('guest')
+        }; })(), goVip: () => this.go('vip'), vipNavBg: s.page === 'vip' ? '#00209F' : '#0B1F5C',
+      vipToCheckout: () => this.scrollToId('vip-checkout'), vipToBenefits: () => this.scrollToId('vip-benefits'),
+      vipCardName: s.vipName || 'Your name', vipCardId: s.vipId || 'JR-VIP-0000',
+      vipName: s.vipName, setVipName: e => this.setState({ vipName: e.target.value }),
+      vipRenew: (() => { const d = new Date(); d.setMonth(d.getMonth() + 1); return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); })(),
+      vipCompare: [['Episodes, reports and James Reports TV', '✓', '✓', '✓'], ['Weekly briefing', '✓', '✓', '✓'], ['Ad-free audio and video', '—', '✓', '✓'], ['48-hour early access', '—', '—', '✓'], ['VIP seat at podcast premieres', '—', '—', '✓'], ['Monthly live Q&A with James', '—', '—', '✓'], ['Exclusive content and extended cuts', '—', '—', '✓'], ['Priority event invitations', '—', '—', '✓'], ['Name in episode credits', '—', '—', '✓']]
+        .map(([label, free, sup, vip]) => ({ label, free, sup, vip, freeColor: free === '✓' ? '#0B1F5C' : '#CDD4E6', supColor: sup === '✓' ? '#0B1F5C' : '#CDD4E6' })),
+      vipMethods: ['Card', 'PayPal', 'Apple Pay', 'Google Pay', 'Cash App', 'Zelle'].map(m => ({ label: m, pick: () => this.setState({ vipMethod: m }),
+        ...(s.vipMethod === m ? { bg: '#0B1F5C', fg: '#FFFFFF', bd: '#0B1F5C' } : { bg: '#FFFFFF', fg: '#0B1F5C', bd: '#CDD4E6' }) })),
+      vipIsCard: s.vipMethod === 'Card', vipIsOther: s.vipMethod !== 'Card',
+      vipMethodNote: ({ 'PayPal': 'You’ll be redirected to PayPal to approve a $45.99 monthly subscription.', 'Apple Pay': 'Confirm $45.99 per month with Face ID or Touch ID on your device.', 'Google Pay': 'Confirm $45.99 per month with your Google account.', 'Cash App': 'Scan the Cash App code on the next screen to start your $45.99 monthly membership.', 'Zelle': 'Send $45.99 each month to the Zelle address shown on the next screen. Your membership activates once payment is received.' })[s.vipMethod] || '',
+      vipAgree: s.vipAgree, toggleVipAgree: () => this.setState({ vipAgree: !s.vipAgree }),
+      vipCta: s.vipAgree ? (s.vipMethod === 'Card' ? 'Join for $45.99/month' : 'Continue with ' + s.vipMethod) : 'Agree to the terms to continue',
+      vipCtaBg: s.vipAgree ? '#D21034' : '#8E9AC0',
+      vipJoin: () => { if (!s.vipAgree) return; this.setState({ vipJoined: true, vipId: s.vipId || 'JR-VIP-' + (1000 + Math.floor(Math.random() * 9000)) }); },
+      vipJoined: s.vipJoined, vipForm: !s.vipJoined,
+      vipFaq: [['When do I get early access?', 'New episodes unlock for VIP members 48 hours before the public release, on the site and in the members-only audio feed.'], ['How do premieres work?', 'Each Thursday premiere opens a members-only room 15 minutes early. James takes VIP questions live during the show.'], ['Can I cancel anytime?', 'Yes. Cancel from your account in two clicks. You keep VIP access until the end of the month you paid for.'], ['Is my membership tax-deductible?', 'No. James Reports is an independent media company, so memberships are not charitable donations.']]
+        .map(([q, a], i) => ({ q, a, open: s.vipFaqOpen === i, sign: s.vipFaqOpen === i ? '−' : '+', toggle: () => this.setState({ vipFaqOpen: s.vipFaqOpen === i ? -1 : i }) })), topicMenu, goWatch: () => this.go('watch'), goAbout: () => this.go('about'),
+      ...(() => {
+        const U = 'UUXOdc4wPeeSxOOVakrf9wlg';
+        const chans = [
+          { name: 'Latest', desc: 'Newest episodes, back to back', list: U },
+          { name: 'Our Story', desc: 'How James Reports began', vid: 'Q_oljAV4Yfs', start: 31 },
+          { name: 'English', desc: 'English-language interviews', list: 'PLYsDWrWXrYqKp2pvk5Seg-r8A3Vic_XWo' },
+          { name: 'Promos', desc: 'Highlights and trailers', list: 'PLYsDWrWXrYqL0zJ9oXmqSS5nA3FM47R9Z' }
+        ];
+        const c = chans[s.tvCh], m = s.tvMuted ? 1 : 0;
+        const tvSrc = c.vid
+          ? 'https://www.youtube.com/embed/' + c.vid + '?autoplay=1&mute=' + m + '&start=' + c.start + '&loop=1&playlist=' + c.vid + '&rel=0&modestbranding=1'
+          : 'https://www.youtube.com/embed/videoseries?list=' + c.list + '&autoplay=1&mute=' + m + '&loop=1&rel=0&modestbranding=1';
+        const d = new Date(s.clockT);
+        const clock = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' }) + ' · ' + d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        const slot = new Date(d); slot.setMinutes(d.getMinutes() < 30 ? 0 : 30, 0, 0);
+        const lineup = ['James Reports: latest episodes', 'The Story of James Reports', 'English interviews', 'Highlights & promos'];
+        const guide = [0, 1, 2, 3, 4].map(i => { const t = new Date(slot.getTime() + i * 1800000);
+          return { time: i === 0 ? 'Now' : t.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }), name: lineup[(s.tvCh + i) % 4],
+            timeColor: i === 0 ? '#FF8A9B' : '#8E9AC0', color: i === 0 ? '#FFFFFF' : '#C3CCE6' }; });
+        const heads = ['Welcome to James Reports TV', 'Immigration · Politics · Haiti · Community', 'New episode premieres Thursday at 8 PM ET', 'Available in English, Français, Kreyòl and Español', 'Support independent journalism at jamesreports.com/support'];
+        const run = [...heads, ...heads].map((t, i) => React.createElement('span', { key: i, style: { display: 'inline-flex', alignItems: 'center', gap: 14, padding: '0 22px', fontSize: 14, fontWeight: 500, color: '#FFFFFF' } },
+          React.createElement('span', { style: { width: 6, height: 6, background: '#D21034', display: 'inline-block' } }), t));
+        return {
+          tvSrc, clock, guide, tvChName: 'CH ' + (s.tvCh + 1) + ' · ' + c.name,
+          ticker: React.createElement('div', { style: { display: 'flex', whiteSpace: 'nowrap', animation: 'ticker 45s linear infinite' } }, run),
+          liveDotW: React.createElement('span', { style: { width: 7, height: 7, borderRadius: 999, background: '#FFFFFF', display: 'inline-block', animation: 'pulse 1.6s ease-in-out infinite' } }),
+          tvChannels: chans.map((ch, i) => ({ num: String(i + 1).padStart(2, '0'), name: ch.name, desc: ch.desc, pick: () => this.setState({ tvCh: i }),
+            bg: i === s.tvCh ? '#0B1F5C' : 'transparent', bd: i === s.tvCh ? '#00209F' : 'rgba(247,248,252,0.08)', numColor: i === s.tvCh ? '#FF8A9B' : '#8E9AC0' })),
+          tvNext: () => this.setState({ tvCh: (s.tvCh + 1) % chans.length }),
+          tvSoundLabel: s.tvMuted ? 'Turn sound on' : 'Mute', tvToggleSound: () => this.setState({ tvMuted: !s.tvMuted }),
+          tvRef: this.tvRef, tvFullscreen: () => { const el = this.tvRef.current; if (el && el.requestFullscreen) el.requestFullscreen(); }
+        };
+      })(), openYT: e => { e.preventDefault(); const u = 'https://www.youtube.com/@JamesReports'; const w = window.open(u, '_blank', 'noopener'); if (!w) { try { window.top.location.href = u; } catch (x) { window.location.href = u; } } }, goPodcast: () => this.go('podcast'),
+      ytLatest: [1, 2, 3, 4].map(i => ({ label: i === 1 ? 'Newest upload' : 'Upload ' + i, src: 'https://www.youtube.com/embed/videoseries?list=UUXOdc4wPeeSxOOVakrf9wlg&index=' + i })),
+      ytGrid: [5, 6, 7, 8, 9, 10].map(i => ({ label: 'Upload ' + i, src: 'https://www.youtube.com/embed/videoseries?list=UUXOdc4wPeeSxOOVakrf9wlg&index=' + i })),
+      ytLists: [['UUXOdc4wPeeSxOOVakrf9wlg', 'Latest uploads'], ['PLYsDWrWXrYqKp2pvk5Seg-r8A3Vic_XWo', 'English'], ['PLYsDWrWXrYqL0zJ9oXmqSS5nA3FM47R9Z', 'Promos']]
+        .map(([id, label]) => ({ label, pick: () => this.setState({ ytList: id }), ...(s.ytList === id ? { bg: '#FFFFFF', fg: '#081230', bd: '#FFFFFF' } : { bg: 'transparent', fg: '#FFFFFF', bd: 'rgba(247,248,252,0.35)' }) })),
+      ytMainSrc: 'https://www.youtube.com/embed/videoseries?list=' + s.ytList + '&rel=0',
+      tabEvents: s.bookTab === 'events', tabAds: s.bookTab === 'ads',
+      bookTabs: [['events', 'Events & appearances'], ['ads', 'Advertising']].map(([k, label]) => ({ label, ...chip(s.bookTab === k), pick: () => this.setState({ bookTab: k, reqType: k === 'ads' ? 'Advertising' : 'Event hosting' }) })),
+      pickEventsTab: () => { this.setState({ bookTab: 'events', reqType: 'Event hosting' }); this.toForm(); },
+      pickAdsTab: () => { this.setState({ bookTab: 'ads', reqType: 'Advertising' }); this.toForm(); },
+      goBookingEvents: () => { this.setState({ bookTab: 'events', reqType: 'Event hosting' }); this.go('booking'); },
+      goBookingAds: () => { this.setState({ bookTab: 'ads', reqType: 'Advertising' }); this.go('booking'); },
+      scrollToForm: () => this.toForm(),
+      clients: ['FCC', 'Humana', 'FPL', 'DoorDash', 'Kay Jewelers', 'City National Bank', 'Conviva', 'Simple Mobile'],
+      kitLabel: s.kit ? 'Media kit sent to your inbox' : 'Request the media kit', getKit: () => this.setState({ kit: true }),
+      reqTypes: ['Event hosting', 'Keynote / appearance', 'Sponsored coverage', 'Advertising'].map(t => ({ label: t, ...chip(s.reqType === t),
+        pick: () => this.setState({ reqType: t, bookTab: t === 'Advertising' ? 'ads' : 'events' }) })),
+      audSizes: ['Under 100', '100–500', '500–2,000', '2,000+'].map(a => ({ label: a, ...chip(s.aud === a), pick: () => this.setState({ aud: a }) })),
+      reqLangs: ['English', 'Français', 'Kreyòl', 'Español'].map(l => ({ label: l, ...chip(s.rLangs.includes(l)),
+        pick: () => this.setState(st => ({ rLangs: st.rLangs.includes(l) ? st.rLangs.filter(x => x !== l) : [...st.rLangs, l] })) })),
+      budgets: ['Under $2.5k', '$2.5k–$10k', '$10k–$25k', '$25k+'].map(b => ({ label: b, ...chip(s.budget === b), pick: () => this.setState({ budget: b }) })),
+      reqSent: s.reqSent, reqOpen: !s.reqSent, reqRef: s.reqRef, reqTypeLabel: s.reqType.toLowerCase(),
+      sendReq: () => this.setState({ reqSent: true, reqRef: 'JR-' + (2600 + Math.floor(Math.random() * 400)) }),
+      resetReq: () => this.setState({ reqSent: false }),
+      hero: eps[0], latest: eps.slice(1, 5), filtered, noResults: filtered.length === 0, catChips, langChips, cur, chapters,
+      outlets: ['CNN en Español', 'MSNBC', 'NewsNation', 'Univision', 'Telemundo', 'NBC 6', 'CBS 4', 'PBS'],
+      reports, reportsTop: reports.slice(0, 4).map((r, i) => ({ ...r, idx: String(i + 1).padStart(2, '0') })), timeline,
+      archive, archiveTop: archive.slice(0, 5),
+      raisedFmt: money(raised), goalFmt: money(goal), goalPct: Math.min(100, raised / goal * 100) + '%', supportersFmt: supporters.toLocaleString('en-US'),
+      quickAmounts: [10, 25, 50, 100].map(v => ({ label: '$' + v, pick: () => { this.setState({ amount: v, custom: '' }); this.go('support'); } })),
+      tiers,
+      freqs: [['monthly', 'Monthly'], ['once', 'One time']].map(([k, label]) => ({ label, pick: () => this.setState({ freq: k }), bg: s.freq === k ? '#0B1F5C' : 'transparent', fg: s.freq === k ? '#F7F8FC' : '#0B1F5C' })),
+      amounts: [5, 15, 25, 50, 100, 250].map(v => ({ label: '$' + v, ...sel(!s.custom && s.amount === v), pick: () => this.setState({ amount: v, custom: '' }) })),
+      customVal: s.custom, setCustom: e => this.setState({ custom: e.target.value.replace(/[^0-9]/g, '') }),
+      methods: ['Card', 'PayPal', 'Cash App', 'Zelle'].map(m => ({ label: m, ...sel(s.method === m), pick: () => this.setState({ method: m }) })),
+      coverFees: s.coverFees, toggleFees: () => this.setState({ coverFees: !s.coverFees }),
+      donateCta: amt > 0 ? 'Give ' + money(total) + (s.freq === 'monthly' ? ' monthly' : '') : 'Choose an amount',
+      donate: () => amt > 0 && this.setState({ donated: true }),
+      donated: s.donated, notDonated: !s.donated, donateSummary: money(total) + (s.freq === 'monthly' ? ' monthly' : ''),
+      resetDonate: () => this.setState({ donated: false }),
+      nlDone: s.nlDone, nlOpen: !s.nlDone, nlSubmit: () => this.setState({ nlDone: true }),
+      bookSent: s.bookSent, bookOpen: !s.bookSent, sendBook: () => this.setState({ bookSent: true }),
+      shareLabel: s.shared ? 'Link copied' : 'Share', copyLink: () => { try { navigator.clipboard.writeText('https://jamesreports.com/episodes/' + cur.id); } catch (e) {} this.setState({ shared: true }); },
+      hasNow: !!now, now: now || eps[0], isPlaying: s.playing, isPaused: !s.playing,
+      elapsed: this.fmt(s.t), progressPct: now ? (s.t / now.sec * 100) + '%' : '0%',
+      togglePlay: () => this.setState({ playing: !s.playing }),
+      seekBar: e => { const r = e.currentTarget.getBoundingClientRect(); this.setState({ t: Math.round((e.clientX - r.left) / r.width * now.sec) }); },
+      speedLabel: s.speed + '×', cycleSpeed: () => this.setState({ speed: s.speed === 1 ? 1.5 : s.speed === 1.5 ? 2 : 1 }),
+      closePlayer: () => this.setState({ now: null, playing: false }),
+      bottomPad: now ? '110px' : '0px',
+      subOpen: s.subOpen, subDone: s.subDone, subForm: !s.subDone,
+      openSub: () => this.setState({ subOpen: true, subDone: false }), closeSub: () => this.setState({ subOpen: false }),
+      stop: e => e.stopPropagation(), subSubmit: () => this.setState({ subDone: true }),
+      subLangs: ['English', 'Français', 'Kreyòl', 'Español'].map(l => ({ label: l, ...chip(s.subLang === l), pick: () => this.setState({ subLang: l }) })),
+      alerts: [['premiere', 'New episode premieres'], ['briefing', 'Weekly briefing'], ['breaking', 'Breaking news from Haiti']].map(([k, label]) => ({ label, on: s.alerts[k], toggle: toggleAlert(k) }))
+    };
+  }
+}
+</script>
+</body>
+</html>

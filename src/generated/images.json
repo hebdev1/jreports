@@ -1,0 +1,197 @@
+{
+  "emmy-portrait.jpg": {
+    "w": 1367,
+    "h": 2048,
+    "widths": [
+      640,
+      1024,
+      1367
+    ]
+  },
+  "emmy-standing.jpg": {
+    "w": 720,
+    "h": 960,
+    "widths": [
+      640,
+      720
+    ]
+  },
+  "emmy-team.jpg": {
+    "w": 2048,
+    "h": 1152,
+    "widths": [
+      640,
+      1024,
+      1600,
+      2048
+    ]
+  },
+  "emmy-trophy-look.jpg": {
+    "w": 1597,
+    "h": 1234,
+    "widths": [
+      640,
+      1024,
+      1597
+    ]
+  },
+  "event-fowen-backdrop.jpg": {
+    "w": 1333,
+    "h": 2000,
+    "widths": [
+      640,
+      1024,
+      1333
+    ]
+  },
+  "event-fowen-group.jpg": {
+    "w": 2000,
+    "h": 1333,
+    "widths": [
+      640,
+      1024,
+      1600,
+      2000
+    ]
+  },
+  "event-hosting-floor.jpg": {
+    "w": 2048,
+    "h": 1366,
+    "widths": [
+      640,
+      1024,
+      1600,
+      2048
+    ]
+  },
+  "event-mic-blue.jpg": {
+    "w": 2000,
+    "h": 1333,
+    "widths": [
+      640,
+      1024,
+      1600,
+      2000
+    ]
+  },
+  "event-smile-blue.jpg": {
+    "w": 1333,
+    "h": 2000,
+    "widths": [
+      640,
+      1024,
+      1333
+    ]
+  },
+  "event-stage-gold.jpg": {
+    "w": 1080,
+    "h": 1620,
+    "widths": [
+      640,
+      1024,
+      1080
+    ]
+  },
+  "hero-james.webp": {
+    "w": 845,
+    "h": 1200,
+    "widths": [
+      640,
+      845
+    ]
+  },
+  "james-beige.png": {
+    "w": 1356,
+    "h": 1970,
+    "widths": [
+      640,
+      1024,
+      1356
+    ]
+  },
+  "james-blue-interview.png": {
+    "w": 1800,
+    "h": 1790,
+    "widths": [
+      640,
+      1024,
+      1600,
+      1800
+    ]
+  },
+  "james-blue-talk.png": {
+    "w": 1634,
+    "h": 2014,
+    "widths": [
+      640,
+      1024,
+      1600,
+      1634
+    ]
+  },
+  "james-emmy.png": {
+    "w": 1238,
+    "h": 1744,
+    "widths": [
+      640,
+      1024,
+      1238
+    ]
+  },
+  "james-field.png": {
+    "w": 1136,
+    "h": 1980,
+    "widths": [
+      640,
+      1024,
+      1136
+    ]
+  },
+  "james-gala.png": {
+    "w": 1540,
+    "h": 1958,
+    "widths": [
+      640,
+      1024,
+      1540
+    ]
+  },
+  "james-stage.png": {
+    "w": 1402,
+    "h": 1668,
+    "widths": [
+      640,
+      1024,
+      1402
+    ]
+  },
+  "james-tux-mic.png": {
+    "w": 1308,
+    "h": 1954,
+    "widths": [
+      640,
+      1024,
+      1308
+    ]
+  },
+  "keyart.png": {
+    "w": 2894,
+    "h": 1766,
+    "widths": [
+      640,
+      1024,
+      1600,
+      2400
+    ]
+  },
+  "sponsor-fowennurses.png": {
+    "w": 3162,
+    "h": 1796,
+    "widths": [
+      640,
+      1024,
+      1600,
+      2400
+    ]
+  }
+}
