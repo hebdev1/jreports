@@ -266,7 +266,7 @@ Run on 2026-11-03 against the live project. Everything below was actually run.
 | No horizontal overflow at 360, 390, 768, 1024, 1440 px | Pass for `/`, `/about`, `/booking`, `/watch`, `/podcast`, `/episodes`, `/admin/login` (and `/admin/forgot-password` at 360) |
 | Admin when signed out | `/admin` redirects to `/admin/login`; page is `noindex` |
 
-**Not yet verified in a browser:** the signed-in admin screens (overview, editors, inbox, settings, team, audit), uploads through the UI, and invitation email delivery. These need the first owner account from [step 4](#4-create-the-first-owner), plus SMTP for emails.
+**Signed in as the first owner (2026-11-04):** all 19 admin pages plus the episode and sponsor editors open with real data, no errors and no horizontal overflow at 1280 px. This was checked read-only: nothing was saved or published. The check found and fixed a bug where the sidebar badge request sent a year-275760 date and got 400. **Not yet verified:** saving, publishing and uploading through the UI, and invitation email delivery (needs SMTP).
 
 ---
 
@@ -274,7 +274,7 @@ Run on 2026-11-03 against the live project. Everything below was actually run.
 
 | Item | Status / what's needed |
 |---|---|
-| First owner account | **Needs a person**: steps 1–4 above |
+| First owner account | Done (2026-11-04). Steps 1–3 above still apply |
 | Invitation and reset emails | **Needs SMTP** (step 3). The built-in sender is heavily rate-limited |
 | Payments | **Blocked**: no payment provider. Donations and VIP sign-ups are pledges |
 | Social-share previews | Fixed in `index.html`. Per-page previews need pre-rendering or a server |

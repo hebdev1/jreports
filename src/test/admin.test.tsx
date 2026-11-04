@@ -3,6 +3,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { episodesDef, sponsorsDef } from '@/admin/collections/defs';
 import { isHttps, parseClock, playlistId, slugify, toClock, youtubeId } from '@/admin/collections/helpers';
+import { BADGE_RANGE } from '@/admin/components/app-sidebar';
 import { RequirePermission, RequireTeam } from '@/admin/components/shell';
 import { useAuth } from '@/admin/lib/auth';
 import { pgrstLike, toCsv } from '@/admin/lib/data';
@@ -105,6 +106,8 @@ describe('content helpers', () => {
     expect(to).toEqual(new Date(2026, 10, 4));
     expect(from).toEqual(new Date(2026, 9, 28));
     expect(rangeBounds('all').from.getTime()).toBe(0);
+    // Postgres timestamps stop at year 294276 but ISO strings past 9999 ("+275760-…") are rejected.
+    expect(BADGE_RANGE.to.toISOString()).toMatch(/^\d{4}-/);
   });
 });
 

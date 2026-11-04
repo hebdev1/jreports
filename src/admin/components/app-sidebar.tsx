@@ -24,7 +24,9 @@ import { useDashboard } from '@/admin/lib/data';
 import { isActivePath, isParent, navFor, type BadgeKey, type NavParent } from '@/admin/nav';
 import { BrandLockup, BrandMark } from './brand';
 
-const BADGE_RANGE = { from: new Date(0), to: new Date(8.64e15) };
+// Badges only use the "pending" counts, so the period just has to be a valid
+// Postgres timestamp (the largest JS date, year 275760, is not: it returned 400).
+export const BADGE_RANGE = { from: new Date(0), to: new Date('2100-01-01T00:00:00Z') };
 
 function useBadges(): Partial<Record<BadgeKey, number>> {
   const q = useDashboard(BADGE_RANGE.from, BADGE_RANGE.to);
