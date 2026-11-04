@@ -4,7 +4,8 @@ import { createMemoryRouter, RouterProvider } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as api from '../lib/api';
 import { clearResourceCache } from '../lib/resource';
-import type { Episode } from '../lib/types';
+import { DEFAULT_CONFIG, type SiteConfig } from '../lib/siteConfig';
+import type { Episode, Sponsor } from '../lib/types';
 import { routes } from '../router';
 
 vi.mock('../lib/api', async (importOriginal) => {
@@ -14,7 +15,8 @@ vi.mock('../lib/api', async (importOriginal) => {
     fetchEpisodes: vi.fn(),
     fetchReports: vi.fn(async () => []),
     fetchArchive: vi.fn(async () => []),
-    fetchSettings: vi.fn(async () => ({ ...actual.DEFAULT_SETTINGS, monthlyGoalCents: 1_200_000 })),
+    fetchSponsors: vi.fn(async () => []),
+    fetchSiteConfig: vi.fn(),
     subscribeNewsletter: vi.fn(async () => undefined),
     submitBookingRequest: vi.fn(async () => 'JR-2601'),
     submitGuestRequest: vi.fn(async () => 'JR-G-101'),
@@ -35,8 +37,21 @@ function renderAt(path: string) {
   return router;
 }
 
+const FOWEN: Sponsor = {
+  id: 's1', name: 'FowenNurses', nameAccent: 'Nurses', tagline: 'NCLEX preparation', websiteUrl: 'https://www.fowennursesllc.com', phone: '(732) 822-3518',
+  image: { id: 'm1', source: 'bundled', url: '/assets/sponsor-fowennurses.png', alt: 'FowenNurses banner', width: 3162, height: 1796 },
+  thanksText: 'Thank you to FowenNurses.', thanksImage: null, placements: ['home_feature', 'home_thanks'],
+};
+
+/** Site settings as saved in the admin, with some groups changed. */
+function withConfig(over: Partial<SiteConfig> = {}) {
+  vi.mocked(api.fetchSiteConfig).mockResolvedValue({ config: { ...structuredClone(DEFAULT_CONFIG), ...over }, media: {} });
+}
+
 beforeEach(() => {
   clearResourceCache();
+  withConfig();
+  vi.mocked(api.fetchSponsors).mockReset().mockResolvedValue([]);
   vi.mocked(api.fetchEpisodes).mockReset().mockResolvedValue(EPISODES);
   vi.mocked(api.subscribeNewsletter).mockClear();
   vi.mocked(api.submitBookingRequest).mockClear();
@@ -57,10 +72,11 @@ describe('home page', () => {
   });
 
   it('offers a retry when episodes fail to load', async () => {
-    vi.mocked(api.fetchEpisodes).mockRejectedValueOnce(new api.ApiError('network', 'We couldn’t reach the server.')).mockResolvedValue(EPISODES);
+    vi.mocked(api.fetchEpisodes).mockRejectedValue(new api.ApiError('network', 'We couldn’t reach the server.'));
     const user = userEvent.setup();
     renderAt('/');
     const retry = (await screen.findAllByRole('button', { name: 'Try again' }))[0];
+    vi.mocked(api.fetchEpisodes).mockResolvedValue(EPISODES);
     await user.click(retry);
     expect(await screen.findByRole('heading', { level: 1, name: 'Haiti at a Crossroads' })).toBeInTheDocument();
   });
@@ -74,6 +90,61 @@ describe('home page', () => {
     expect(HTMLMediaElement.prototype.play).toHaveBeenCalled();
     await user.click(within(player).getByRole('button', { name: 'Close player' }));
     expect(screen.queryByRole('region', { name: 'Audio player' })).not.toBeInTheDocument();
+  });
+});
+
+describe('site settings from the admin', () => {
+  it('follows the saved section order and hides hidden sections', async () => {
+    const sections = DEFAULT_CONFIG.home.sections.map((s) => ({ ...s, visible: s.key !== 'fundraising' }));
+    withConfig({ home: { ...DEFAULT_CONFIG.home, sections } });
+    renderAt('/');
+    await screen.findByRole('heading', { level: 1, name: 'Haiti at a Crossroads' });
+    expect(screen.queryByRole('heading', { name: /No network\. No owners/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'How James Reports began' })).toBeInTheDocument();
+  });
+
+  it('shows the saved announcement and header links', async () => {
+    withConfig({
+      ticker: { enabled: true, label: 'Live', text: 'Election night coverage starts at 7 PM', linkLabel: 'Watch', linkUrl: 'https://www.youtube.com/@JamesReports' },
+      navigation: { header: [...DEFAULT_CONFIG.navigation.header.map((l) => ({ ...l, visible: l.href !== '/archive' }))] },
+    });
+    renderAt('/about');
+    expect(await screen.findByText('Election night coverage starts at 7 PM')).toBeInTheDocument();
+    const main = screen.getByRole('navigation', { name: 'Main' });
+    expect(within(main).getByRole('link', { name: 'About' })).toBeInTheDocument();
+    expect(within(main).queryByRole('link', { name: 'Archive' })).not.toBeInTheDocument();
+  });
+
+  it('says so when settings fail to load, and shows no announcement or figures', async () => {
+    vi.mocked(api.fetchSiteConfig).mockRejectedValue(new api.ApiError('network', 'We couldn’t reach the server.'));
+    renderAt('/');
+    expect(await screen.findByText(/Some site information couldn’t be loaded/)).toBeInTheDocument();
+    expect(screen.queryByText(/premieres Thursday at 8 PM ET on YouTube/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/monthly goal/)).not.toBeInTheDocument();
+    expect(screen.getByText('Every gift funds the next episode.')).toBeInTheDocument();
+  });
+
+  it('shows published sponsors in their placements', async () => {
+    vi.mocked(api.fetchSponsors).mockResolvedValue([FOWEN]);
+    renderAt('/');
+    expect(await screen.findByRole('link', { name: 'Visit fowennursesllc.com' })).toHaveAttribute('href', 'https://www.fowennursesllc.com');
+    expect(screen.getByRole('link', { name: '(732) 822-3518' })).toHaveAttribute('href', 'tel:+17328223518');
+    expect(screen.getByText('Thank you to FowenNurses.')).toBeInTheDocument();
+  });
+
+  it('hides the sponsor sections when there are no published sponsors', async () => {
+    renderAt('/');
+    await screen.findByRole('heading', { level: 1, name: 'Haiti at a Crossroads' });
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'James Reports is made possible by' })).not.toBeInTheDocument());
+  });
+});
+
+describe('episode preview', () => {
+  it('asks visitors without an admin session to sign in, and is not indexed', async () => {
+    localStorage.removeItem('jr-admin-auth');
+    renderAt('/episodes/ep-48?preview=1');
+    expect(await screen.findByRole('heading', { name: 'Sign in to preview' })).toBeInTheDocument();
+    expect(document.querySelector('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow');
   });
 });
 

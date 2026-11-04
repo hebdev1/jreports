@@ -2,37 +2,27 @@ import { useEffect, useRef, useState } from 'react';
 import { ytPlaylist, ytVideo } from '../components/blocks';
 import { EYEBROW } from '../components/ui';
 import { sx } from '../lib/sx';
-import { YOUTUBE_CHANNEL, YT_ENGLISH, YT_PROMOS, YT_UPLOADS } from '../lib/theme';
+import { useChannelUrl, useConfig } from '../lib/content';
+import { UPLOADS_PLAYLIST, type WatchChannel } from '../lib/siteConfig';
 import { useTitle } from '../lib/useTitle';
 
-type Channel = { name: string; desc: string; list?: string; vid?: string; start?: number };
-
-const CHANNELS: Channel[] = [
-  { name: 'Latest', desc: 'Newest episodes, back to back', list: YT_UPLOADS },
-  { name: 'Our Story', desc: 'How James Reports began', vid: 'Q_oljAV4Yfs', start: 31 },
-  { name: 'English', desc: 'English-language interviews', list: YT_ENGLISH },
-  { name: 'Promos', desc: 'Highlights and trailers', list: YT_PROMOS },
-];
-const LINEUP = ['James Reports: latest episodes', 'The Story of James Reports', 'English interviews', 'Highlights & promos'];
-const HEADS = [
-  'Welcome to James Reports TV',
-  'Immigration · Politics · Haiti · Community',
-  'New episode premieres Thursday at 8 PM ET',
-  'Available in English, Français, Kreyòl and Español',
-  'Support independent journalism at jamesreports.com/support',
-];
-
-export function channelSrc(c: Channel, muted: boolean): string {
+export function channelSrc(c: WatchChannel, muted: boolean): string {
   const m = muted ? 1 : 0;
-  return c.vid
-    ? ytVideo(c.vid, `autoplay=1&mute=${m}&start=${c.start ?? 0}&loop=1&playlist=${c.vid}&rel=0&modestbranding=1`)
-    : ytPlaylist(c.list ?? YT_UPLOADS, `&autoplay=1&mute=${m}&loop=1&rel=0&modestbranding=1`);
+  return c.videoId
+    ? ytVideo(c.videoId, `autoplay=1&mute=${m}&start=${c.start}&loop=1&playlist=${c.videoId}&rel=0&modestbranding=1`)
+    : ytPlaylist(c.playlistId || UPLOADS_PLAYLIST, `&autoplay=1&mute=${m}&loop=1&rel=0&modestbranding=1`);
 }
 
 /** "James Reports TV": YouTube channels presented as a live TV screen. */
 export default function Watch() {
   useTitle('Watch James Reports TV');
-  const [ch, setCh] = useState(0);
+  // Channels, headlines and the premiere slot are set in the admin (Site → Watch & podcast).
+  const { watch } = useConfig().cfg;
+  const channel = useChannelUrl();
+  const CHANNELS = watch.channels;
+  const HEADS = watch.headlines;
+  const [chosen, setCh] = useState(0);
+  const ch = Math.min(chosen, CHANNELS.length - 1);
   const [muted, setMuted] = useState(true);
   const [now, setNow] = useState(() => Date.now());
   const screen = useRef<HTMLDivElement>(null);
@@ -50,7 +40,7 @@ export default function Watch() {
   slot.setMinutes(d.getMinutes() < 30 ? 0 : 30, 0, 0);
   const guide = [0, 1, 2, 3, 4].map((i) => {
     const t = new Date(slot.getTime() + i * 1_800_000);
-    return { time: i === 0 ? 'Now' : t.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }), name: LINEUP[(ch + i) % 4], current: i === 0 };
+    return { time: i === 0 ? 'Now' : t.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }), name: CHANNELS[(ch + i) % CHANNELS.length].guideLabel || CHANNELS[(ch + i) % CHANNELS.length].name, current: i === 0 };
   });
   const btn = 'background:transparent;color:#FFFFFF;border:1px solid rgba(247,248,252,0.35);border-radius:999px;padding:12px 20px;font-size:14px;font-weight:600;cursor:pointer';
 
@@ -119,7 +109,7 @@ export default function Watch() {
                 Next channel →
               </button>
               <span style={sx('flex:1')} />
-              <a href={YOUTUBE_CHANNEL} target="_blank" rel="noopener noreferrer" className="h-white-border" style={sx('border:1px solid rgba(247,248,252,0.35);color:#FFFFFF;border-radius:999px;padding:12px 20px;font-size:14px;font-weight:600')}>
+              <a href={channel} target="_blank" rel="noopener noreferrer" className="h-white-border" style={sx('border:1px solid rgba(247,248,252,0.35);color:#FFFFFF;border-radius:999px;padding:12px 20px;font-size:14px;font-weight:600')}>
                 Open on YouTube
               </a>
             </div>
@@ -129,7 +119,7 @@ export default function Watch() {
               <h2 style={sx(EYEBROW + ';margin:0;color:#FF8A9B')}>Channels</h2>
               {CHANNELS.map((x, i) => (
                 <button
-                  key={x.name}
+                  key={`${i}-${x.name}`}
                   type="button"
                   onClick={() => setCh(i)}
                   aria-pressed={i === ch}
@@ -138,7 +128,7 @@ export default function Watch() {
                   <span style={{ ...sx("font-family:'Oswald',sans-serif;font-size:22px;font-weight:700"), color: i === ch ? '#FF8A9B' : '#8E9AC0' }}>{String(i + 1).padStart(2, '0')}</span>
                   <span style={sx('display:flex;flex-direction:column;gap:3px')}>
                     <span style={sx('font-size:15px;font-weight:600')}>{x.name}</span>
-                    <span style={sx('font-size:12px;color:#C3CCE6')}>{x.desc}</span>
+                    <span style={sx('font-size:12px;color:#C3CCE6')}>{x.description}</span>
                   </span>
                 </button>
               ))}
@@ -151,11 +141,13 @@ export default function Watch() {
                   <span style={{ fontSize: 14, color: g.current ? '#FFFFFF' : '#C3CCE6' }}>{g.name}</span>
                 </div>
               ))}
-              <div style={sx('margin-top:10px;padding:14px;border-radius:8px;background:#D21034;font-size:14px;line-height:1.45')}>
-                <b>Thursday · 8 PM ET</b>
-                <br />
-                New episode premiere
-              </div>
+              {(watch.premiereTitle || watch.premiereSubtitle) && (
+                <div style={sx('margin-top:10px;padding:14px;border-radius:8px;background:#D21034;font-size:14px;line-height:1.45')}>
+                  <b>{watch.premiereTitle}</b>
+                  {watch.premiereTitle && watch.premiereSubtitle && <br />}
+                  {watch.premiereSubtitle}
+                </div>
+              )}
             </div>
           </aside>
         </div>

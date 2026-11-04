@@ -1,5 +1,6 @@
+import { mergeConfig, type SiteConfig } from './siteConfig';
 import { supabase } from './supabase';
-import type { ArchiveItem, Chapter, Episode, LangCode, Report, SiteSettings, Topic } from './types';
+import type { ArchiveItem, Chapter, Episode, LangCode, PublicMedia, Report, Sponsor, Topic } from './types';
 import type { BookingInput, GuestInput, NewsletterInput, PledgeInput, ReleaseInput } from './validation';
 
 const TIMEOUT_MS = 15_000;
@@ -86,16 +87,26 @@ async function select<T>(run: () => PromiseLike<{ data: T | null; error: unknown
 
 // ------------------------------------------------------------------ content
 
-interface EpisodeRow {
+// Only published rows are readable by visitors (row-level security); the
+// status filters below say so explicitly and keep the queries index-friendly.
+
+/** Columns visitors may read from media_assets. */
+export const MEDIA_COLUMNS = 'id, source, url, alt, width, height';
+
+export interface EpisodeRow {
   id: string; number: number; title: string; dek: string; guest: string; topic: Topic; language: LangCode;
   duration_seconds: number; published_on: string; youtube_id: string | null; audio_url: string | null; chapters: Chapter[] | null;
+  image?: PublicMedia | null; seo_title?: string; seo_description?: string;
 }
+
+export const EPISODE_COLUMNS = `id, number, title, dek, guest, topic, language, duration_seconds, published_on, youtube_id, audio_url, chapters, seo_title, seo_description, image:media_assets!episodes_image_id_fkey(${MEDIA_COLUMNS})`;
 
 export function mapEpisode(r: EpisodeRow): Episode {
   return {
     id: r.id, number: r.number, title: r.title, dek: r.dek, guest: r.guest, topic: r.topic, language: r.language,
     durationSeconds: r.duration_seconds, publishedOn: r.published_on, youtubeId: r.youtube_id, audioUrl: r.audio_url,
     chapters: Array.isArray(r.chapters) ? r.chapters.filter((c) => typeof c?.at === 'number' && typeof c?.label === 'string') : [],
+    image: r.image ?? null, seoTitle: r.seo_title ?? '', seoDescription: r.seo_description ?? '',
   };
 }
 
@@ -103,17 +114,18 @@ export async function fetchEpisodes(): Promise<Episode[]> {
   const rows = await select(() =>
     client()
       .from('episodes')
-      .select('id, number, title, dek, guest, topic, language, duration_seconds, published_on, youtube_id, audio_url, chapters')
+      .select(EPISODE_COLUMNS)
+      .eq('status', 'published')
       .order('published_on', { ascending: false })
       .order('number', { ascending: false })
       .abortSignal(signal()),
   );
-  return (rows as EpisodeRow[]).map(mapEpisode);
+  return (rows as unknown as EpisodeRow[]).map(mapEpisode);
 }
 
 export async function fetchReports(): Promise<Report[]> {
   const rows = await select(() =>
-    client().from('reports').select('id, topic, title, dek, read_minutes, published_on, url').order('published_on', { ascending: false }).abortSignal(signal()),
+    client().from('reports').select('id, topic, title, dek, read_minutes, published_on, url').eq('status', 'published').order('published_on', { ascending: false }).abortSignal(signal()),
   );
   return (rows as Array<{ id: string; topic: Topic; title: string; dek: string; read_minutes: number; published_on: string; url: string | null }>).map((r) => ({
     id: r.id, topic: r.topic, title: r.title, dek: r.dek, readMinutes: r.read_minutes, publishedOn: r.published_on, url: r.url,
@@ -122,34 +134,49 @@ export async function fetchReports(): Promise<Report[]> {
 
 export async function fetchArchive(): Promise<ArchiveItem[]> {
   const rows = await select(() =>
-    client().from('archive_items').select('id, name, show, image_url, href').order('sort_order', { ascending: true }).abortSignal(signal()),
+    client().from('archive_items').select('id, name, show, image_url, href').eq('status', 'published').order('sort_order', { ascending: true }).abortSignal(signal()),
   );
   return (rows as Array<{ id: number; name: string; show: string; image_url: string; href: string }>).map((r) => ({
     id: r.id, name: r.name, show: r.show, imageUrl: r.image_url, href: r.href,
   }));
 }
 
-export const DEFAULT_SETTINGS: SiteSettings = { showTicker: false, tickerText: '', tickerLinkUrl: '', monthlyGoalCents: null, raisedCents: null, supportersCount: null };
+interface SponsorRow {
+  id: string; name: string; name_accent: string; tagline: string; website_url: string | null; phone: string;
+  thanks_text: string; placements: Sponsor['placements']; image: PublicMedia | null; thanks_image: PublicMedia | null;
+}
 
-export async function fetchSettings(): Promise<SiteSettings> {
-  let r: { show_ticker: boolean; ticker_text: string; ticker_link_url: string; monthly_goal_cents: number | null; raised_cents: number | null; supporters_count: number | null } | null;
-  try {
-    const { data, error } = await client()
-      .from('site_settings')
-      .select('show_ticker, ticker_text, ticker_link_url, monthly_goal_cents, raised_cents, supporters_count')
-      .eq('id', true)
-      .abortSignal(signal())
-      .maybeSingle();
-    if (error) throw error;
-    r = data;
-  } catch (err) {
-    throw toApiError(err);
-  }
-  if (!r) return DEFAULT_SETTINGS;
-  return {
-    showTicker: r.show_ticker, tickerText: r.ticker_text, tickerLinkUrl: r.ticker_link_url,
-    monthlyGoalCents: r.monthly_goal_cents, raisedCents: r.raised_cents, supportersCount: r.supporters_count,
-  };
+export async function fetchSponsors(): Promise<Sponsor[]> {
+  const rows = await select(() =>
+    client()
+      .from('sponsors')
+      .select(
+        `id, name, name_accent, tagline, website_url, phone, thanks_text, placements, image:media_assets!sponsors_image_id_fkey(${MEDIA_COLUMNS}), thanks_image:media_assets!sponsors_thanks_image_id_fkey(${MEDIA_COLUMNS})`,
+      )
+      .eq('status', 'published')
+      .order('sort_order', { ascending: true })
+      .abortSignal(signal()),
+  );
+  return (rows as unknown as SponsorRow[]).map((r) => ({
+    id: r.id, name: r.name, nameAccent: r.name_accent, tagline: r.tagline, websiteUrl: r.website_url, phone: r.phone,
+    image: r.image, thanksText: r.thanks_text, thanksImage: r.thanks_image, placements: r.placements ?? [],
+  }));
+}
+
+export interface PublicConfig {
+  config: SiteConfig;
+  /** Images chosen for the fixed page positions, by media id. */
+  media: Record<string, PublicMedia>;
+}
+
+/** Site settings managed in the admin (header, footer, home page, images…). */
+export async function fetchSiteConfig(): Promise<PublicConfig> {
+  const rows = await select(() => client().from('site_config').select('key, value').abortSignal(signal()));
+  const config = mergeConfig(rows as Array<{ key: string; value: unknown }>);
+  const ids = [...new Set(Object.values(config.images).filter((v): v is string => typeof v === 'string' && v !== ''))];
+  if (ids.length === 0) return { config, media: {} };
+  const media = await select(() => client().from('media_assets').select(MEDIA_COLUMNS).in('id', ids).abortSignal(signal()));
+  return { config, media: Object.fromEntries((media as unknown as PublicMedia[]).map((m) => [m.id, m])) };
 }
 
 // -------------------------------------------------------------- submissions

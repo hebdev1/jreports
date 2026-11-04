@@ -25,6 +25,9 @@ export interface Episode {
   youtubeId: string | null;
   audioUrl: string | null;
   chapters: Chapter[];
+  image?: PublicMedia | null;
+  seoTitle?: string;
+  seoDescription?: string;
 }
 
 export interface Report {
@@ -45,11 +48,26 @@ export interface ArchiveItem {
   href: string;
 }
 
-export interface SiteSettings {
-  showTicker: boolean;
-  tickerText: string;
-  tickerLinkUrl: string;
-  monthlyGoalCents: number | null;
-  raisedCents: number | null;
-  supportersCount: number | null;
+/** An image from the media library (the admin's "Media" section). */
+export interface PublicMedia {
+  id: string;
+  source: 'bundled' | 'storage';
+  url: string;
+  alt: string;
+  width: number | null;
+  height: number | null;
+}
+
+export interface Sponsor {
+  id: string;
+  name: string;
+  /** Trailing part of the name shown in red, e.g. "Nurses" in FowenNurses. */
+  nameAccent: string;
+  tagline: string;
+  websiteUrl: string | null;
+  phone: string;
+  image: PublicMedia | null;
+  thanksText: string;
+  thanksImage: PublicMedia | null;
+  placements: Array<'home_feature' | 'home_thanks'>;
 }

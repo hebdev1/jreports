@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type Dispatch, type FormEvent, type RefObject, type SetStateAction } from 'react';
 import { useSearchParams } from 'react-router';
-import { Img } from '../components/Img';
+import { Img, MediaImg } from '../components/Img';
 import { Chip, ChipGroup, EYEBROW, Field, FlagBar, FormAlert, Honeypot, Spinner, TextArea, focusFirstError } from '../components/ui';
 import { submitBookingRequest } from '../lib/api';
+import { useConfig } from '../lib/content';
 import { sx } from '../lib/sx';
 import { chip } from '../lib/theme';
 import { LANGUAGES } from '../lib/types';
@@ -11,7 +12,6 @@ import { useTitle } from '../lib/useTitle';
 import { AUDIENCES, BUDGETS, hasErrors, REQUEST_TYPES, validateBooking, type BookingInput, type Errors } from '../lib/validation';
 
 type Tab = 'events' | 'ads';
-const CLIENTS = ['FCC', 'Humana', 'FPL', 'DoorDash', 'Kay Jewelers', 'City National Bank', 'Conviva', 'Simple Mobile'];
 
 const SERVICES: Array<{ img: string; alt: string; pos?: string; kicker: string; title: string; body: string; items: string[] }> = [
   {
@@ -40,7 +40,7 @@ const AD_PRODUCTS: Array<[string, string, string, string]> = [
   ['Branded content', 'Custom production', 'Commercials and campaigns produced by James and his team, drawing on more than 1,000 spots to date.', 'Script, shoot, edit, deliver'],
 ];
 
-const MEDIA_KIT = 'mailto:ads@jamesreports.com?subject=' + encodeURIComponent('Media kit request');
+const mediaKit = (adsEmail: string) => `mailto:${adsEmail}?subject=${encodeURIComponent('Media kit request')}`;
 
 function emptyForm(tab: Tab): BookingInput {
   return {
@@ -51,6 +51,7 @@ function emptyForm(tab: Tab): BookingInput {
 
 export default function Booking() {
   useTitle('Booking & partnerships');
+  const { cfg, slot } = useConfig();
   const [params, setParams] = useSearchParams();
   const tab: Tab = params.get('tab') === 'ads' ? 'ads' : 'events';
   const [form, setForm] = useState<BookingInput>(() => emptyForm(tab));
@@ -103,7 +104,7 @@ export default function Booking() {
             </dl>
           </div>
           <div style={sx('position:relative;aspect-ratio:4/5;border-radius:20px 20px 0 0;overflow:hidden;background:#0B1F5C')}>
-            <Img src="event-smile-blue.jpg" alt="James Pierre smiling in a blue tuxedo jacket while hosting an evening event" eager sizes="(max-width: 960px) 100vw, 620px" />
+            <MediaImg media={slot('bookingHero')} fallback="event-smile-blue.jpg" alt="James Pierre smiling in a blue tuxedo jacket while hosting an evening event" eager sizes="(max-width: 960px) 100vw, 620px" />
             <FlagBar h={6} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, pointerEvents: 'none' }} />
           </div>
         </div>
@@ -113,7 +114,7 @@ export default function Booking() {
         <div className="wrap" style={sx('max-width:1320px;margin:0 auto;padding:22px 32px;display:flex;gap:32px;align-items:center;flex-wrap:wrap')}>
           <span style={sx(EYEBROW + ';color:#6B6B6B')}>James has produced for</span>
           <ul style={sx('display:flex;gap:28px;flex-wrap:wrap;align-items:center;flex:1;list-style:none;margin:0;padding:0')}>
-            {CLIENTS.map((c) => (
+            {cfg.credits.clients.map((c) => (
               <li key={c} style={sx("font-family:'Oswald',sans-serif;font-weight:500;font-size:17px;letter-spacing:0.04em;text-transform:uppercase;color:#4A5578")}>
                 {c}
               </li>
@@ -187,6 +188,7 @@ function EventServices() {
 }
 
 function AdProducts() {
+  const { contact } = useConfig().cfg;
   return (
     <section aria-labelledby="ads-title" className="wrap" style={sx('max-width:1320px;margin:0 auto;padding:80px 32px')}>
       <div style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:24px 56px;align-items:end;margin-bottom:44px')}>
@@ -197,7 +199,7 @@ function AdProducts() {
           <p style={sx('margin:0;font-size:17px;line-height:1.6;color:#4A5578')}>
             James Reports reaches Haitian and Caribbean audiences across the United States, Canada, France and Haiti, with Spanish-speaking viewers across South Florida.
           </p>
-          <a href={MEDIA_KIT} className="press h-navy" style={sx('background:#0B1F5C;color:#FFFFFF;border:0;border-radius:999px;padding:14px 22px;font-size:14px;font-weight:600;cursor:pointer')}>
+          <a href={mediaKit(contact.adsEmail)} className="press h-navy" style={sx('background:#0B1F5C;color:#FFFFFF;border:0;border-radius:999px;padding:14px 22px;font-size:14px;font-weight:600;cursor:pointer')}>
             Request the media kit<span className="sr-only"> by email</span>
           </a>
         </div>
@@ -296,6 +298,7 @@ function BookingFormSection({
   onTab,
 }: Readonly<{ formRef: RefObject<HTMLElement | null>; form: BookingInput; setForm: Dispatch<SetStateAction<BookingInput>>; onTab: (t: Tab) => void }>) {
   const [website, setWebsite] = useState('');
+  const { contact } = useConfig().cfg;
   const [errors, setErrors] = useState<Errors<BookingInput>>({});
   const submit = useSubmit<string>();
   const doneRef = useRef<HTMLHeadingElement>(null);
@@ -330,11 +333,11 @@ function BookingFormSection({
         <p style={sx('margin:0;font-size:16px;line-height:1.6;color:#4A5578')}>A member of James’s team reviews every request and replies within two business days.</p>
         <div style={sx('display:flex;flex-direction:column;gap:6px;padding-top:20px;border-top:1px solid #CDD4E6;font-size:15px')}>
           <span style={sx(eyebrow)}>Direct</span>
-          <a href="mailto:booking@jamesreports.com" style={{ fontWeight: 600 }}>
-            booking@jamesreports.com
+          <a href={`mailto:${contact.bookingEmail}`} style={{ fontWeight: 600 }}>
+            {contact.bookingEmail}
           </a>
-          <a href="mailto:ads@jamesreports.com" style={{ fontWeight: 600 }}>
-            ads@jamesreports.com
+          <a href={`mailto:${contact.adsEmail}`} style={{ fontWeight: 600 }}>
+            {contact.adsEmail}
           </a>
         </div>
       </div>

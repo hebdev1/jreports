@@ -1,8 +1,9 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
-import { Img } from '../components/Img';
+import { MediaImg } from '../components/Img';
 import { Chip, ChipGroup, EYEBROW, Field, FlagBar, FormAlert, Honeypot, Spinner, focusFirstError } from '../components/ui';
 import { submitPledge } from '../lib/api';
+import { useConfig } from '../lib/content';
 import { sx } from '../lib/sx';
 import { tile } from '../lib/theme';
 import { useSubmit } from '../lib/useSubmit';
@@ -59,6 +60,7 @@ function renewDate() {
 
 export default function Vip() {
   useTitle('VIP Club');
+  const { slot } = useConfig();
   const [name, setName] = useState('');
   const [reference, setReference] = useState<string | null>(null);
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -90,7 +92,7 @@ export default function Vip() {
           </div>
           <div style={sx('position:relative;display:grid;place-items:center;padding:24px 0')}>
             <div style={sx('position:relative;width:100%;max-width:440px;aspect-ratio:4/5;border-radius:20px;overflow:hidden;background:#0B1F5C')}>
-              <Img src="emmy-portrait.jpg" alt="James Pierre holding his Emmy award" eager sizes="(max-width: 960px) 100vw, 440px" />
+              <MediaImg media={slot('vipHero')} fallback="emmy-portrait.jpg" alt="James Pierre holding his Emmy award" eager sizes="(max-width: 960px) 100vw, 440px" />
             </div>
             <div aria-label="VIP member card preview" role="img" style={sx('position:absolute;left:0;bottom:0;width:min(78%,340px);aspect-ratio:1.586;border-radius:16px;background:#00209F;box-shadow:0 8px 24px rgba(0,0,0,0.4);overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;padding:20px 22px')}>
               <div style={sx('position:absolute;left:0;right:0;bottom:0;height:42%;background:#D21034')} />

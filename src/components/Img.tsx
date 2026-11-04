@@ -1,5 +1,6 @@
 import { useState, type CSSProperties } from 'react';
 import manifest from '../generated/images.json';
+import type { PublicMedia } from '../lib/types';
 
 type Meta = { w: number; h: number; widths: number[] };
 const IMAGES = manifest as Record<string, Meta>;
@@ -25,7 +26,8 @@ interface ImgProps {
  */
 export function Img({ src, alt, position = '50% 50%', sizes = '100vw', eager = false, layout = 'fill', style }: Readonly<ImgProps>) {
   const [failed, setFailed] = useState(false);
-  const meta = IMAGES[src];
+  const external = /^https:\/\//.test(src);
+  const meta = external ? undefined : IMAGES[src];
   const base = src.replace(/\.[a-z]+$/i, '');
   const fill: CSSProperties = layout === 'fill' ? { position: 'absolute', inset: 0, width: '100%', height: '100%' } : { width: '100%', height: 'auto' };
 
@@ -41,7 +43,7 @@ export function Img({ src, alt, position = '50% 50%', sizes = '100vw', eager = f
     <picture>
       {meta && <source type="image/webp" sizes={sizes} srcSet={meta.widths.map((w) => `/assets/opt/${base}-${w}.webp ${w}w`).join(', ')} />}
       <img
-        src={`/assets/${src}`}
+        src={external ? src : `/assets/${src}`}
         alt={alt}
         width={meta?.w}
         height={meta?.h}
@@ -53,4 +55,24 @@ export function Img({ src, alt, position = '50% 50%', sizes = '100vw', eager = f
       />
     </picture>
   );
+}
+
+type MediaImgProps = Omit<ImgProps, 'src' | 'alt'> & {
+  /** From the media library; `null` = use the original photo, `undefined` = not known yet. */
+  media: PublicMedia | null | undefined;
+  /** The design's original file in public/assets. */
+  fallback: string;
+  alt: string;
+};
+
+/**
+ * An image chosen in the admin. Bundled files keep their responsive WebP
+ * versions; uploads come from the public media bucket. While settings load
+ * the frame shows its background colour rather than the wrong photo.
+ */
+export function MediaImg({ media, fallback, alt, ...rest }: Readonly<MediaImgProps>) {
+  if (media === undefined) return null;
+  if (media === null) return <Img src={fallback} alt={alt} {...rest} />;
+  const src = media.source === 'bundled' ? media.url.replace(/^\/assets\//, '') : media.url;
+  return <Img key={src} src={src} alt={media.alt || alt} {...rest} />;
 }

@@ -1,17 +1,19 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { submitGuestRequest } from '../lib/api';
+import { useConfig } from '../lib/content';
 import { sx } from '../lib/sx';
 import { darkChip } from '../lib/theme';
 import { LANGUAGES, TOPICS } from '../lib/types';
 import { useSubmit } from '../lib/useSubmit';
 import { GUEST_FORMATS, hasErrors, validateGuest, type Errors, type GuestInput } from '../lib/validation';
-import { Img } from './Img';
+import { MediaImg } from './Img';
 import { Chip, ChipGroup, EYEBROW, Field, FormAlert, Honeypot, Spinner, TextArea, focusFirstError } from './ui';
 
 const EMPTY: GuestInput = { fullName: '', titleOrg: '', email: '', phone: '', topic: 'Haiti', languages: ['English'], format: 'One-on-one interview', links: '', pitch: '' };
 
 /** "Request to be a guest on James Reports" — shown at the foot of every page. */
 export function GuestRequestSection() {
+  const { slot } = useConfig();
   const [form, setForm] = useState<GuestInput>(EMPTY);
   const [website, setWebsite] = useState('');
   const [errors, setErrors] = useState<Errors<GuestInput>>({});
@@ -47,7 +49,7 @@ export function GuestRequestSection() {
             Experts, community leaders, artists, athletes and people with a story to tell. Tell us who you are and what you’d like to talk about.
           </p>
           <div style={sx('position:relative;aspect-ratio:16/10;border-radius:12px;overflow:hidden;background:#0B1F5C;max-width:520px')}>
-            <Img src="james-blue-interview.png" alt="James Pierre listening during a sit-down interview" sizes="(max-width: 900px) 100vw, 520px" />
+            <MediaImg media={slot('guestPhoto')} fallback="james-blue-interview.png" alt="James Pierre listening during a sit-down interview" sizes="(max-width: 900px) 100vw, 520px" />
           </div>
         </div>
         <div className="card-pad" style={sx('background:#081230;border:1px solid rgba(247,248,252,0.1);border-radius:20px;padding:32px')}>

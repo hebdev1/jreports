@@ -1,32 +1,45 @@
-import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router';
 import { Triangle, ytVideo } from '../components/blocks';
-import { Img } from '../components/Img';
+import { MediaImg } from '../components/Img';
 import { canPlay, usePlayer } from '../components/player';
 import { EYEBROW, LoadError, Skeleton } from '../components/ui';
-import { useEpisodes, useSettings } from '../lib/content';
+import { toApiError, type ApiError } from '../lib/api';
+import { useChannelUrl, useConfig, useEpisodes } from '../lib/content';
 import { clock, shortDate } from '../lib/format';
+import { fetchEpisodePreview, type EpisodePreview } from '../lib/preview';
 import { sx } from '../lib/sx';
-import { LANG_NAMES, TOPIC_COVERS, YOUTUBE_CHANNEL } from '../lib/theme';
+import { LANG_NAMES, TOPIC_COVERS } from '../lib/theme';
 import type { Episode as Ep } from '../lib/types';
 import { useTitle } from '../lib/useTitle';
 import NotFound from './NotFound';
 
+const episodeTitle = (ep: Ep | undefined) => (ep ? ep.seoTitle || `EP ${ep.number}: ${ep.title}` : 'Episode');
+
+function Loading() {
+  return (
+    <section className="on-dark wrap" aria-busy="true" style={sx('background:#081230;padding:40px 32px 64px')}>
+      <div style={sx('max-width:1320px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));gap:48px')}>
+        <Skeleton count={1} css="aspect-ratio:16/9" />
+        <Skeleton count={3} css="height:64px" />
+      </div>
+    </section>
+  );
+}
+
 export default function Episode() {
   const { id } = useParams();
+  const [params] = useSearchParams();
+  if (params.get('preview') === '1' && id) return <Preview id={id} />;
+  return <Published id={id} />;
+}
+
+function Published({ id }: Readonly<{ id: string | undefined }>) {
   const episodes = useEpisodes();
   const ep = episodes.status === 'ready' ? episodes.data.find((e) => e.id === id) : undefined;
-  useTitle(ep ? `EP ${ep.number}: ${ep.title}` : 'Episode');
+  useTitle(episodeTitle(ep), ep ? ep.seoDescription || ep.dek : undefined);
 
-  if (episodes.status === 'loading')
-    return (
-      <section className="on-dark wrap" aria-busy="true" style={sx('background:#081230;padding:40px 32px 64px')}>
-        <div style={sx('max-width:1320px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));gap:48px')}>
-          <Skeleton count={1} css="aspect-ratio:16/9" />
-          <Skeleton count={3} css="height:64px" />
-        </div>
-      </section>
-    );
+  if (episodes.status === 'loading') return <Loading />;
   if (episodes.status === 'error')
     return (
       <section className="wrap" style={sx('max-width:1320px;margin:0 auto;padding:72px 32px')}>
@@ -37,14 +50,82 @@ export default function Episode() {
   return <EpisodeView key={ep.id} ep={ep} />;
 }
 
-function EpisodeView({ ep }: Readonly<{ ep: Ep }>) {
+/** /episodes/:id?preview=1, for the team: drafts and pending edits, never indexed. */
+function Preview({ id }: Readonly<{ id: string }>) {
+  const [state, setState] = useState<{ status: 'loading' } | { status: 'error'; error: ApiError } | { status: 'done'; result: EpisodePreview }>({ status: 'loading' });
+  const load = useCallback(() => {
+    setState({ status: 'loading' });
+    fetchEpisodePreview(id).then(
+      (result) => setState({ status: 'done', result }),
+      (err) => setState({ status: 'error', error: toApiError(err) }),
+    );
+  }, [id]);
+  useEffect(load, [load]);
+  useEffect(() => {
+    const meta = document.createElement('meta');
+    meta.name = 'robots';
+    meta.content = 'noindex, nofollow';
+    document.head.appendChild(meta);
+    return () => meta.remove();
+  }, []);
+  const ep = state.status === 'done' && state.result.status === 'ok' ? state.result.episode : undefined;
+  useTitle(ep ? `Preview · ${episodeTitle(ep)}` : 'Preview');
+
+  if (state.status === 'loading') return <Loading />;
+  if (state.status === 'error')
+    return (
+      <section className="wrap" style={sx('max-width:1320px;margin:0 auto;padding:72px 32px')}>
+        <LoadError message={state.error.message} onRetry={load} />
+      </section>
+    );
+  const r = state.result;
+  if (r.status === 'not_found') return <NotFound what="episode" />;
+  if (r.status === 'signed_out')
+    return (
+      <section className="wrap" style={sx('max-width:760px;margin:0 auto;padding:96px 32px;display:flex;flex-direction:column;gap:16px')}>
+        <h1 style={sx("margin:0;font-family:'Playfair Display',serif;font-size:36px;font-weight:700")}>Sign in to preview</h1>
+        <p style={sx('margin:0;font-size:16px;line-height:1.6;color:#4A5578')}>Previews of unpublished episodes are only for the James Reports team. Sign in to the admin in this browser, then open the preview again.</p>
+        <a href="/admin/login" className="press h-navy" style={sx('align-self:flex-start;background:#0B1F5C;color:#FFFFFF;border-radius:999px;padding:14px 22px;font-size:14px;font-weight:600')}>
+          Sign in to the admin
+        </a>
+      </section>
+    );
+  const label =
+    r.publication === 'published'
+      ? r.hasChanges
+        ? 'Preview of unpublished changes. Visitors still see the published version.'
+        : 'This episode is live. This preview matches what visitors see.'
+      : r.publication === 'archived'
+        ? 'Preview of an archived episode. Visitors can’t see it.'
+        : 'Preview of a draft. Visitors can’t see this episode until it’s published.';
+  return (
+    <EpisodeView
+      key={r.episode.id}
+      ep={r.episode}
+      banner={
+        <div role="status" style={sx('background:#FFF4E5;color:#0B1F5C;border-bottom:1px solid #F3D9B1;font-size:14px')}>
+          <div className="wrap" style={sx('max-width:1320px;margin:0 auto;padding:10px 32px;display:flex;gap:12px;align-items:center;flex-wrap:wrap')}>
+            <b style={sx('font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#B4231F')}>Preview</b>
+            <span style={{ flex: 1, minWidth: 220 }}>{label}</span>
+            <a href={`/admin/episodes/${encodeURIComponent(r.episode.id)}`} style={sx('font-weight:600;border-bottom:1px solid #0B1F5C')}>
+              Back to the editor
+            </a>
+          </div>
+        </div>
+      }
+    />
+  );
+}
+
+function EpisodeView({ ep, banner }: Readonly<{ ep: Ep; banner?: ReactNode }>) {
   const player = usePlayer();
-  const settings = useSettings();
+  const { cfg, status, slot } = useConfig();
+  const channel = useChannelUrl();
   const [watchingFrom, setWatchingFrom] = useState<number | null>(null);
   const [share, setShare] = useState<'idle' | 'copied' | 'failed'>('idle');
   const hasAudio = canPlay(ep);
   const hasVideo = Boolean(ep.youtubeId);
-  const supporters = settings.status === 'ready' ? settings.data.supportersCount : null;
+  const supporters = status === 'ready' ? cfg.fundraising.supportersCount : null;
 
   useEffect(() => {
     if (share === 'idle') return;
@@ -72,10 +153,11 @@ function EpisodeView({ ep }: Readonly<{ ep: Ep }>) {
   };
 
   const ghost = 'border:1px solid rgba(247,248,252,0.4);color:#F7F8FC;border-radius:999px;padding:14px 22px;font-size:14px;font-weight:600';
-  const youtubeHref = ep.youtubeId ? `https://www.youtube.com/watch?v=${ep.youtubeId}` : YOUTUBE_CHANNEL;
+  const youtubeHref = ep.youtubeId ? `https://www.youtube.com/watch?v=${ep.youtubeId}` : channel;
 
   return (
     <div>
+      {banner}
       <section aria-labelledby="ep-title" className="on-dark" style={sx('background:#081230;color:#F7F8FC')}>
         <div className="wrap" style={sx('max-width:1320px;margin:0 auto;padding:40px 32px 64px')}>
           <Link to="/episodes" className="h-white-text" style={sx('display:inline-block;background:none;border:0;color:#C3CCE6;font-size:14px;cursor:pointer;padding:0;margin-bottom:28px')}>
@@ -94,7 +176,7 @@ function EpisodeView({ ep }: Readonly<{ ep: Ep }>) {
                 />
               ) : (
                 <>
-                  <Img src="keyart.png" alt="" eager sizes="(max-width: 1100px) 100vw, 640px" />
+                  <MediaImg media={ep.image ?? slot('episodeDefault')} fallback="keyart.png" alt="" eager sizes="(max-width: 1100px) 100vw, 640px" />
                   {(hasVideo || hasAudio) && (
                     <button type="button" onClick={() => startPlayback()} aria-label={hasVideo ? `Watch EP ${ep.number}` : `Listen to EP ${ep.number}`} className="press h-red" style={sx('position:absolute;width:84px;height:84px;border-radius:999px;border:0;background:#D21034;display:grid;place-items:center;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,0.3)')}>
                       <Triangle size={22} ml={5} />

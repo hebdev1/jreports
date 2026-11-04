@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError, mapEpisode, toApiError } from '../lib/api';
-import { clock, money, shortDate, withFees } from '../lib/format';
+import { clock, money, shortDate, splitAccent, telHref, withFees, withHandle } from '../lib/format';
+import { ADMIN_AUTH_KEY, readAdminToken } from '../lib/preview';
+import { DEFAULT_CONFIG, mergeConfig, visibleSections } from '../lib/siteConfig';
 import { sx } from '../lib/sx';
 import { filterEpisodes } from '../pages/Episodes';
 import { pledgeAmount } from '../pages/Support';
@@ -86,5 +88,45 @@ describe('donation amount', () => {
     expect(pledgeAmount(25, '')).toBe(2500);
     expect(pledgeAmount(25, '30')).toBe(3000);
     expect(pledgeAmount(25, '0')).toBe(0);
+  });
+});
+
+describe('managed site content helpers', () => {
+  it('builds phone links, wordmarks and social labels from saved values', () => {
+    expect(telHref('(732) 822-3518')).toBe('tel:+17328223518');
+    expect(telHref('+509 3700 0000')).toBe('tel:+50937000000');
+    expect(splitAccent('FowenNurses', 'Nurses')).toEqual(['Fowen', 'Nurses']);
+    expect(splitAccent('Acme', 'Other')).toEqual(['Acme', '']);
+    expect(splitAccent('Nurses', 'Nurses')).toEqual(['Nurses', '']);
+    expect(withHandle('YouTube', 'https://www.youtube.com/@JamesReports')).toBe('YouTube · @JamesReports');
+    expect(withHandle('X', 'https://twitter.com/lovejamespierre')).toBe('X · @lovejamespierre');
+    expect(withHandle('Facebook', 'https://www.facebook.com/pages/JAMES-PIERRE/284513110117')).toBe('Facebook');
+  });
+
+  it('merges saved settings over the launch values, group by group', () => {
+    const cfg = mergeConfig([
+      { key: 'ticker', value: { enabled: false } },
+      { key: 'unknown', value: { x: 1 } },
+      { key: 'home', value: { sections: [{ key: 'story', visible: true }, { key: 'hero', visible: false }] } },
+    ]);
+    expect(cfg.ticker.enabled).toBe(false);
+    expect(cfg.ticker.text).toBe(DEFAULT_CONFIG.ticker.text);
+    expect(visibleSections(cfg)).toEqual(['story']);
+    expect(cfg.home.highlights).toEqual(DEFAULT_CONFIG.home.highlights);
+    expect('unknown' in cfg).toBe(false);
+  });
+});
+
+describe('draft preview token', () => {
+  it('reads the admin session only while it is valid', () => {
+    const now = 1_800_000_000_000;
+    localStorage.setItem(ADMIN_AUTH_KEY, JSON.stringify({ access_token: 'abc', expires_at: now / 1000 + 60 }));
+    expect(readAdminToken(now)).toBe('abc');
+    localStorage.setItem(ADMIN_AUTH_KEY, JSON.stringify({ access_token: 'abc', expires_at: now / 1000 - 1 }));
+    expect(readAdminToken(now)).toBeNull();
+    localStorage.setItem(ADMIN_AUTH_KEY, 'not json');
+    expect(readAdminToken(now)).toBeNull();
+    localStorage.removeItem(ADMIN_AUTH_KEY);
+    expect(readAdminToken(now)).toBeNull();
   });
 });

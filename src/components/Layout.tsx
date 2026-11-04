@@ -1,13 +1,13 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, Outlet, useLocation } from 'react-router';
 import { subscribeNewsletter } from '../lib/api';
-import { useSettings } from '../lib/content';
+import { useConfig, useSiteConfig } from '../lib/content';
 import { sx } from '../lib/sx';
-import { YOUTUBE_CHANNEL } from '../lib/theme';
+import { withHandle } from '../lib/format';
 import { useSubmit } from '../lib/useSubmit';
 import { hasErrors, validateNewsletter } from '../lib/validation';
 import { GuestRequestSection } from './GuestRequestSection';
-import { Header, NAV } from './Header';
+import { Header, SiteLink, useNavLinks } from './Header';
 import { MiniPlayer, PlayerProvider, usePlayer } from './player';
 import { SubscribeProvider } from './subscribe';
 import { Field, FlagBar, FormAlert, Honeypot, Spinner } from './ui';
@@ -48,6 +48,7 @@ function Shell() {
         Skip to content
       </a>
       <FlagBar />
+      <SettingsNotice />
       <Ticker />
       <Header />
       <main id="main" tabIndex={-1} style={{ outline: 'none' }}>
@@ -61,20 +62,37 @@ function Shell() {
   );
 }
 
+/** Says so when the managed settings couldn't load, instead of silently showing older values. */
+function SettingsNotice() {
+  const config = useSiteConfig();
+  if (config.status !== 'error') return null;
+  return (
+    <div role="status" className="no-print" style={sx('background:#FFF4E5;color:#0B1F5C;font-size:13px;border-bottom:1px solid #F3D9B1')}>
+      <div className="wrap" style={sx('max-width:1320px;margin:0 auto;padding:8px 32px;display:flex;gap:12px;align-items:center;flex-wrap:wrap')}>
+        <span style={{ flex: 1, minWidth: 220 }}>Some site information couldn’t be loaded, so parts of this page may be out of date.</span>
+        <button type="button" onClick={config.retry} style={sx('background:none;border:0;border-bottom:1px solid #0B1F5C;padding:2px 0;font-size:13px;font-weight:600;color:#0B1F5C;cursor:pointer')}>
+          Try again
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function Ticker() {
-  const settings = useSettings();
-  if (settings.status !== 'ready' || !settings.data.showTicker || !settings.data.tickerText) return null;
-  const { tickerText, tickerLinkUrl } = settings.data;
+  const { cfg, status } = useConfig();
+  const t = cfg.ticker;
+  // Only announce what was actually saved; never show the launch announcement on a failed load.
+  if (status !== 'ready' || !t.enabled || !t.text) return null;
   return (
     <div className="on-dark no-print" style={sx('background:#081230;color:#F7F8FC;font-size:13px;letter-spacing:0.04em')}>
       <div className="wrap" style={sx('max-width:1320px;margin:0 auto;padding:10px 32px;display:flex;align-items:center;gap:20px;flex-wrap:wrap')}>
         <span style={sx('display:flex;align-items:center;gap:8px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;font-size:11px;color:#FF8A9B')}>
-          <span className="live-dot" aria-hidden="true" style={sx('width:8px;height:8px;border-radius:999px;background:#D32F2F;display:inline-block')} /> Premiere
+          <span className="live-dot" aria-hidden="true" style={sx('width:8px;height:8px;border-radius:999px;background:#D32F2F;display:inline-block')} /> {t.label}
         </span>
-        <span style={sx('flex:1;min-width:220px;color:#EEF1F8')}>{tickerText}</span>
-        {tickerLinkUrl && (
-          <a href={tickerLinkUrl} target="_blank" rel="noopener noreferrer" className="h-white-text" style={sx('color:#FF8A9B;font-weight:600')}>
-            Set a reminder →<span className="sr-only"> (opens YouTube)</span>
+        <span style={sx('flex:1;min-width:220px;color:#EEF1F8')}>{t.text}</span>
+        {t.linkUrl && (
+          <a href={t.linkUrl} target="_blank" rel="noopener noreferrer" className="h-white-text" style={sx('color:#FF8A9B;font-weight:600')}>
+            {t.linkLabel || 'Learn more'} →<span className="sr-only"> (opens in a new tab)</span>
           </a>
         )}
       </div>
@@ -146,6 +164,14 @@ function NewsletterSection() {
 }
 
 function Footer() {
+  const { cfg } = useConfig();
+  const links = useNavLinks();
+  const social = [
+    [cfg.social.youtube, withHandle('YouTube', cfg.social.youtube)],
+    [cfg.social.facebook, 'Facebook'],
+    [cfg.social.x, withHandle('X', cfg.social.x)],
+    [cfg.social.vimeo, 'Vimeo'],
+  ].filter(([href]) => href);
   const link = 'background:none;border:0;padding:0;text-align:left;color:#C3CCE6;font-size:14px;cursor:pointer';
   const head = 'font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#FF8A9B';
   return (
@@ -155,16 +181,16 @@ function Footer() {
           <span style={sx("font-family:'Oswald',sans-serif;font-weight:700;font-size:26px;letter-spacing:0.02em;text-transform:uppercase;color:#FFFFFF")}>
             James <span style={{ color: '#FF8A9B' }}>Reports</span>
           </span>
-          <span style={sx("font-family:'Lora',serif;font-style:italic;font-size:15px;line-height:1.5")}>Trusted coverage of immigration, politics and Haiti. Miami, Florida.</span>
-          <span style={sx('font-size:13px;color:#8E9AC0')}>English · Français · Kreyòl · Español</span>
+          {cfg.brand.description && <span style={sx("font-family:'Lora',serif;font-style:italic;font-size:15px;line-height:1.5")}>{cfg.brand.description}</span>}
+          {cfg.footer.languages && <span style={sx('font-size:13px;color:#8E9AC0')}>{cfg.footer.languages}</span>}
           <FlagBar h={3} style={{ width: 48, marginTop: 4 }} />
         </div>
         <nav aria-label="Explore" style={sx('display:flex;flex-direction:column;gap:10px')}>
           <span style={sx(head)}>Explore</span>
-          {NAV.map(([to, label]) => (
-            <Link key={to} to={to} className="h-pink-text" style={sx(link)}>
+          {links.map(([to, label]) => (
+            <SiteLink key={to} to={to} className="h-pink-text" style={sx(link)}>
               {label}
-            </Link>
+            </SiteLink>
           ))}
         </nav>
         <nav aria-label="Guests" style={sx('display:flex;flex-direction:column;gap:10px')}>
@@ -194,12 +220,7 @@ function Footer() {
         </nav>
         <div style={sx('display:flex;flex-direction:column;gap:10px;font-size:14px')}>
           <span style={sx(head)}>Follow</span>
-          {[
-            [YOUTUBE_CHANNEL, 'YouTube · @JamesReports'],
-            ['https://www.facebook.com/pages/JAMES-PIERRE/284513110117', 'Facebook'],
-            ['https://twitter.com/lovejamespierre', 'X · @lovejamespierre'],
-            ['https://vimeo.com/jamespierre', 'Vimeo'],
-          ].map(([href, label]) => (
+          {social.map(([href, label]) => (
             <a key={href} href={href} target="_blank" rel="noopener noreferrer" className="h-pink-text" style={{ color: '#C3CCE6' }}>
               {label}
             </a>
@@ -207,10 +228,24 @@ function Footer() {
         </div>
       </div>
       <div className="wrap" style={sx('max-width:1320px;margin:0 auto;padding:20px 32px 28px;border-top:1px solid rgba(247,248,252,0.1);font-size:12px;color:#8E9AC0;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap')}>
-        <span>© {new Date().getFullYear()} James Reports. All rights reserved.</span>
+        <span>
+          © {new Date().getFullYear()} {cfg.brand.siteName}. All rights reserved.
+        </span>
         <span style={sx('display:flex;gap:20px')}>
-          <span>Privacy</span>
-          <span>Terms</span>
+          {cfg.footer.privacyUrl ? (
+            <a href={cfg.footer.privacyUrl} target="_blank" rel="noopener noreferrer" className="h-pink-text" style={{ color: '#8E9AC0' }}>
+              Privacy
+            </a>
+          ) : (
+            <span>Privacy</span>
+          )}
+          {cfg.footer.termsUrl ? (
+            <a href={cfg.footer.termsUrl} target="_blank" rel="noopener noreferrer" className="h-pink-text" style={{ color: '#8E9AC0' }}>
+              Terms
+            </a>
+          ) : (
+            <span>Terms</span>
+          )}
         </span>
       </div>
     </footer>

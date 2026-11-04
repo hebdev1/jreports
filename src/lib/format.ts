@@ -27,3 +27,21 @@ export function longDate(date: Date): string {
 export function withFees(cents: number, coverFees: boolean): number {
   return coverFees ? Math.round(cents * 1.03) : cents;
 }
+
+/** "(732) 822-3518" → "tel:+17328223518". */
+export function telHref(phone: string): string {
+  const digits = phone.replace(/[^\d+]/g, '');
+  if (digits.startsWith('+')) return `tel:${digits}`;
+  return `tel:${digits.length === 10 ? `+1${digits}` : digits}`;
+}
+
+/** Splits "FowenNurses" / "Nurses" into the navy and red parts of the wordmark. */
+export function splitAccent(name: string, accent: string): [string, string] {
+  return accent && name.endsWith(accent) && accent !== name ? [name.slice(0, -accent.length), accent] : [name, ''];
+}
+
+/** "YouTube · @JamesReports" from https://www.youtube.com/@JamesReports. */
+export function withHandle(network: string, url: string): string {
+  const m = /^https:\/\/[^/]+\/(@?[A-Za-z0-9_.-]+)\/?$/.exec(url);
+  return m ? `${network} · ${m[1].startsWith('@') ? m[1] : `@${m[1]}`}` : network;
+}

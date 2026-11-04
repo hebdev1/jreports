@@ -41,11 +41,6 @@ export const TOPIC_DESC: Record<Topic, string> = {
 
 export const LANG_NAMES: Record<LangCode, string> = { EN: 'English', FR: 'Français', KR: 'Kreyòl', ES: 'Español' };
 
-export const YOUTUBE_CHANNEL = 'https://www.youtube.com/@JamesReports';
-export const YT_UPLOADS = 'UUXOdc4wPeeSxOOVakrf9wlg';
-export const YT_ENGLISH = 'PLYsDWrWXrYqKp2pvk5Seg-r8A3Vic_XWo';
-export const YT_PROMOS = 'PLYsDWrWXrYqL0zJ9oXmqSS5nA3FM47R9Z';
-
 /** Selected / unselected chip colours on light backgrounds (design `chip()`). */
 export function chip(on: boolean) {
   return on

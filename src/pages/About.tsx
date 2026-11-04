@@ -1,7 +1,8 @@
 import { Link } from 'react-router';
 import { H1 } from '../components/blocks';
-import { Img } from '../components/Img';
+import { Img, MediaImg } from '../components/Img';
 import { EYEBROW } from '../components/ui';
+import { useConfig } from '../lib/content';
 import { sx } from '../lib/sx';
 import { useTitle } from '../lib/useTitle';
 
@@ -15,39 +16,36 @@ const GALLERY: Array<[string, string]> = [
 
 export default function About() {
   useTitle('About James Pierre');
+  const { cfg, slot } = useConfig();
+  const { about } = cfg;
   const stat = "font-family:'Oswald',sans-serif;font-size:38px;font-weight:700;line-height:1";
   return (
     <div>
       <section aria-labelledby="about-title" className="wrap" style={sx('max-width:1320px;margin:0 auto;padding:72px 32px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:64px;align-items:start')}>
         <div style={sx('position:relative;aspect-ratio:4/5;border-radius:20px;overflow:hidden;background:#DDE3F0')}>
-          <Img src="james-emmy.png" alt="James Pierre holding his Emmy award at the Suncoast Emmy Awards" eager sizes="(max-width: 960px) 100vw, 620px" />
+          <MediaImg media={slot('aboutPortrait')} fallback="james-emmy.png" alt="James Pierre holding his Emmy award at the Suncoast Emmy Awards" eager sizes="(max-width: 960px) 100vw, 620px" />
         </div>
         <div style={sx('display:flex;flex-direction:column;gap:24px')}>
           <div style={sx(EYEBROW + ';color:#D21034')}>About</div>
           <h1 id="about-title" style={sx(H1 + ';margin:0;font-size:clamp(44px,6vw,80px)')}>
             James Pierre
           </h1>
-          <p style={sx("margin:0;font-family:'Lora',serif;font-size:21px;line-height:1.55;color:#0B1F5C")}>
-            4-time Emmy Award-winning Haitian-American journalist, television producer and multilingual news anchor with more than 20 years of experience in broadcast journalism.
-          </p>
-          <p style={sx('margin:0;font-size:16px;line-height:1.7;color:#4A5578')}>
-            James has been featured on CNN en Español, MSNBC, NewsNation, Telemundo, Univision, Fox Sports, CBS 4, NBC 6, RT America and Canal 9 in Argentina. He was a contributor to the Rick Sanchez Show and Prohibido Callarse on Mira TV, and serves as TV producer and anchor at MDC-TV, where he hosts The Talk with James Pierre.
-          </p>
-          <p style={sx('margin:0;font-size:16px;line-height:1.7;color:#4A5578')}>
-            He is fluent in English, French, Creole and Spanish. Beyond the newsroom, he hosts events for nonprofits and educational institutions and speaks to students across South Florida and the Caribbean.
-          </p>
-          <dl style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1px;background:#CDD4E6;border:1px solid #CDD4E6;border-radius:12px;overflow:hidden;margin:0')}>
-            {[
-              ['Awards', 'Emmy · Davey · Telly · Communicator'],
-              ['Education', 'B.S. Miami Dade College · M.A. St. Thomas University'],
-              ['Based in', 'Miami, Florida'],
-            ].map(([k, v]) => (
-              <div key={k} style={sx('background:#FFFFFF;padding:20px')}>
-                <dt style={sx(EYEBROW + ';color:#6B6B6B;margin-bottom:8px')}>{k}</dt>
-                <dd style={sx('margin:0;font-size:15px;line-height:1.5')}>{v}</dd>
-              </div>
-            ))}
-          </dl>
+          <p style={sx("margin:0;font-family:'Lora',serif;font-size:21px;line-height:1.55;color:#0B1F5C")}>{about.intro}</p>
+          {about.paragraphs.map((p) => (
+            <p key={p} style={sx('margin:0;font-size:16px;line-height:1.7;color:#4A5578')}>
+              {p}
+            </p>
+          ))}
+          {about.facts.length > 0 && (
+            <dl style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1px;background:#CDD4E6;border:1px solid #CDD4E6;border-radius:12px;overflow:hidden;margin:0')}>
+              {about.facts.map(({ label: k, value: v }) => (
+                <div key={k} style={sx('background:#FFFFFF;padding:20px')}>
+                  <dt style={sx(EYEBROW + ';color:#6B6B6B;margin-bottom:8px')}>{k}</dt>
+                  <dd style={sx('margin:0;font-size:15px;line-height:1.5')}>{v}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
         </div>
       </section>
 

@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { subscribeNewsletter } from '../lib/api';
-import { chip, YOUTUBE_CHANNEL } from '../lib/theme';
+import { useChannelUrl } from '../lib/content';
+import { chip } from '../lib/theme';
 import { sx } from '../lib/sx';
 import { LANGUAGES, type Language } from '../lib/types';
 import { useSubmit } from '../lib/useSubmit';
@@ -30,6 +31,7 @@ const ALERTS: Array<[keyof NewsletterInput['alerts'], string]> = [
 
 /** The design's "Subscribe to James Reports" modal, as an accessible <dialog>. */
 export function SubscribeDialog({ open, onClose }: Readonly<{ open: boolean; onClose: () => void }>) {
+  const channel = useChannelUrl();
   const ref = useRef<HTMLDialogElement>(null);
   const [form, setForm] = useState<NewsletterInput>({ email: '', language: 'English', alerts: { premiere: true, briefing: true, breaking: false } });
   const [website, setWebsite] = useState('');
@@ -78,7 +80,7 @@ export function SubscribeDialog({ open, onClose }: Readonly<{ open: boolean; onC
               You’ll get premiere alerts and the weekly briefing at <b style={{ color: '#0B1F5C' }}>{form.email.trim()}</b>. Subscribe on YouTube too, so you never miss a live premiere.
             </p>
             <div style={sx('display:flex;gap:10px;flex-wrap:wrap')}>
-              <a href={YOUTUBE_CHANNEL} target="_blank" rel="noopener noreferrer" className="h-navy" style={sx('background:#0B1F5C;color:#F7F8FC;border-radius:999px;padding:14px 22px;font-size:14px;font-weight:600')}>
+              <a href={channel} target="_blank" rel="noopener noreferrer" className="h-navy" style={sx('background:#0B1F5C;color:#F7F8FC;border-radius:999px;padding:14px 22px;font-size:14px;font-weight:600')}>
                 Subscribe on YouTube
               </a>
               <button type="button" onClick={onClose} autoFocus style={sx('background:none;border:1px solid #CDD4E6;border-radius:999px;padding:14px 22px;font-size:14px;font-weight:600;color:#0B1F5C;cursor:pointer')}>
