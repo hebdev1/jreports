@@ -48,7 +48,7 @@ export function useSaveConfig<K extends ConfigKey>(key: K) {
 
 export interface Dashboard {
   period: { booking: number; guest: number; pledges: number; pledged_cents: number; newsletter: number; releases: number | null };
-  pending: { booking_new: number; guest_new: number; pledges_unpaid: number; drafts_pending: number };
+  pending: { booking_new: number; guest_new: number; pledges_unpaid: number; vip_unpaid: number; donations_unpaid: number; drafts_pending: number };
   content: Record<ContentEntity, { published: number; draft: number; archived: number }>;
   subscribers: number;
   episodes_without_media: number;
@@ -73,6 +73,11 @@ export interface ListParams {
   searchColumns?: string[];
   filters?: Record<string, string | undefined>;
   sort: { column: string; ascending: boolean };
+}
+
+/** Exact, case-insensitive match for a PostgREST ilike filter (no wildcards). */
+export function pgrstExact(s: string): string {
+  return s.replace(/[%_,()*\\]/g, (c) => `\\${c}`);
 }
 
 /** Escapes a value for a PostgREST or() / ilike filter. */

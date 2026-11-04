@@ -1,4 +1,4 @@
-import { createBrowserRouter, Outlet, type RouteObject } from 'react-router';
+import { createBrowserRouter, Navigate, Outlet, type RouteObject } from 'react-router';
 import { CollectionEditor, CollectionList } from './collections/framework';
 import { archiveDef, episodesDef, reportsDef, sponsorsDef } from './collections/defs';
 import { ConfirmProvider } from './components/common';
@@ -11,6 +11,7 @@ import { InboxPage } from './routes/inbox';
 import { MediaPage } from './routes/media';
 import { NotFoundPage } from './routes/not-found';
 import { OverviewPage } from './routes/overview';
+import { PledgePage, PledgeRedirect, SupportersPage } from './routes/supporters';
 import { AboutSettingsPage, BrandSettingsPage, HeaderSettingsPage, HomeSettingsPage, WatchSettingsPage } from './routes/site';
 import { TeamPage } from './routes/team';
 
@@ -54,8 +55,29 @@ export const adminRoutes: RouteObject[] = [
           {
             path: 'inbox',
             handle: { crumb: 'Inbox' },
-            children: [{ path: ':kind', element: <InboxPage /> }],
+            children: [
+              // Pledges moved to their own VIP Club and Donations tabs.
+              { path: 'pledges', element: <Navigate to="/admin/donations" replace /> },
+              { path: ':kind', element: <InboxPage /> },
+            ],
           },
+          {
+            path: 'vip',
+            handle: { crumb: 'VIP Club' },
+            children: [
+              { index: true, element: <SupportersPage kind="vip" /> },
+              { path: ':id', element: <PledgePage kind="vip" /> },
+            ],
+          },
+          {
+            path: 'donations',
+            handle: { crumb: 'Donations' },
+            children: [
+              { index: true, element: <SupportersPage kind="donation" /> },
+              { path: ':id', element: <PledgePage kind="donation" /> },
+            ],
+          },
+          { path: 'pledges/:id', element: <PledgeRedirect /> },
           {
             path: 'site',
             handle: { crumb: 'Site' },

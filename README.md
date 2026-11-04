@@ -69,6 +69,7 @@ Project: **James Reports** (`zadipaukhnycrjuixxhj`). Schema lives in [`supabase/
 | `…_admin_seed` | Moves the bundled images, FowenNurses and every hard-coded setting into the database; replaces `site_settings` |
 | `…_admin_add_member` | Owner-only "add to team", used by the `admin-invite` Edge Function (`supabase/functions/`) |
 | `…_episode_video_report_articles` | Uploaded episode videos (public `videos` bucket) and reports as full articles (rich-text body, cover image, byline) |
+| `…_supporters_tabs` | When a pledge was marked paid, and the figures for the admin's VIP Club and Donations tabs |
 
 **Security model.** Visitors use the publishable key, which maps to the `anon` role.
 - Content tables: `anon` may only `SELECT` published rows (and only the public columns). Insert/update/delete privileges are revoked.

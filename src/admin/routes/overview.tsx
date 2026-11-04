@@ -4,6 +4,7 @@ import {
   CalendarCheck,
   CircleAlert,
   Clapperboard,
+  Crown,
   FileSignature,
   HandCoins,
   Images,
@@ -28,14 +29,14 @@ import { formatMoney, timeAgo } from '@/admin/lib/format';
 import { sb } from '@/admin/lib/supabase';
 import { cn } from '@/admin/lib/utils';
 
-const RANGES = [
+export const RANGES = [
   { key: '7d', label: '7 days', days: 7 },
   { key: '30d', label: '30 days', days: 30 },
   { key: '90d', label: '90 days', days: 90 },
   { key: '365d', label: '12 months', days: 365 },
   { key: 'all', label: 'All time', days: null },
 ] as const;
-type RangeKey = (typeof RANGES)[number]['key'];
+export type RangeKey = (typeof RANGES)[number]['key'];
 
 /** Day-aligned bounds, so the query key stays stable while the page is open. */
 export function rangeBounds(key: RangeKey, now = new Date()): { from: Date; to: Date } {
@@ -62,7 +63,7 @@ const ENTITY_LINKS: Record<string, { label: string; to: (id: string) => string }
   admin_members: { label: 'Team', to: () => '/admin/team' },
   booking_requests: { label: 'Booking request', to: () => '/admin/inbox/bookings' },
   guest_requests: { label: 'Guest request', to: () => '/admin/inbox/guests' },
-  support_pledges: { label: 'Pledge', to: () => '/admin/inbox/pledges' },
+  support_pledges: { label: 'Pledge', to: (id) => `/admin/pledges/${id}` },
   talent_releases: { label: 'Talent release', to: () => '/admin/inbox/releases' },
   newsletter_subscribers: { label: 'Subscriber', to: () => '/admin/inbox/subscribers' },
 };
@@ -175,7 +176,8 @@ export function OverviewPage() {
     ? [
         { n: d.pending.booking_new, label: 'new booking & ad requests', to: '/admin/inbox/bookings?status=new', icon: CalendarCheck },
         { n: d.pending.guest_new, label: 'new guest requests', to: '/admin/inbox/guests?status=new', icon: Mic },
-        { n: d.pending.pledges_unpaid, label: 'pledges awaiting payment', to: '/admin/inbox/pledges?status=pending_payment', icon: HandCoins },
+        { n: d.pending.vip_unpaid, label: 'VIP memberships awaiting payment', to: '/admin/vip?status=pending_payment', icon: Crown },
+        { n: d.pending.donations_unpaid, label: 'donations awaiting payment', to: '/admin/donations?status=pending_payment', icon: HandCoins },
         ...CONTENT.map((c) => ({ n: drafts.data?.[c.entity] ?? 0, label: `live ${c.label.toLowerCase()} with unpublished changes`, to: c.to, icon: PenLine })),
       ].filter((x) => x.n > 0)
     : [];
@@ -185,7 +187,7 @@ export function OverviewPage() {
     fundraising && fundraising.goalCents === null && { text: 'The monthly fundraising goal isn’t set, so the progress bar is hidden.', to: '/admin/site/home', action: 'Set the goal' },
     d && d.episodes_without_media > 0 && { text: `${d.episodes_without_media} published episode${d.episodes_without_media === 1 ? ' has' : 's have'} no video or audio.`, to: '/admin/episodes?status=published', action: 'Review episodes' },
     (missingAlt.data ?? 0) > 0 && { text: `${missingAlt.data} image${missingAlt.data === 1 ? ' is' : 's are'} missing a description for screen readers.`, to: '/admin/media', action: 'Add descriptions' },
-    { text: 'Payments aren’t connected: donations and VIP sign-ups are recorded as pledges and no money is collected online.', to: '/admin/inbox/pledges', action: 'View pledges' },
+    { text: 'Payments aren’t connected: donations and VIP sign-ups are recorded as pledges and no money is collected online.', to: '/admin/donations', action: 'View donations' },
   ].filter(Boolean) as Array<{ text: string; to: string; action: string }>;
 
   return (
@@ -214,7 +216,7 @@ export function OverviewPage() {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             <Metric icon={CalendarCheck} label="Booking & ad requests" value={String(d?.period.booking ?? 0)} to="/admin/inbox/bookings" loading={!d} />
             <Metric icon={Mic} label="Guest requests" value={String(d?.period.guest ?? 0)} to="/admin/inbox/guests" loading={!d} />
-            <Metric icon={HandCoins} label="Pledges" value={String(d?.period.pledges ?? 0)} note={d ? `${formatMoney(d.period.pledged_cents)} pledged (not collected)` : undefined} to="/admin/inbox/pledges" loading={!d} />
+            <Metric icon={HandCoins} label="Pledges" value={String(d?.period.pledges ?? 0)} note={d ? `${formatMoney(d.period.pledged_cents)} pledged (not collected)` : undefined} to="/admin/donations" loading={!d} />
             <Metric icon={Mail} label="Newsletter sign-ups" value={String(d?.period.newsletter ?? 0)} note={d ? `${d.subscribers} subscribed in total` : undefined} to="/admin/inbox/subscribers" loading={!d} />
             {can('view_releases') && <Metric icon={FileSignature} label="Talent releases signed" value={String(d?.period.releases ?? 0)} to="/admin/inbox/releases" loading={!d} />}
           </div>

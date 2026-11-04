@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { CalendarCheck, Download, FileSignature, HandCoins, Loader2, Mail, Mic, Search, Trash2, type LucideIcon } from 'lucide-react';
+import { CalendarCheck, Download, FileSignature, Loader2, Mail, Mic, Search, Trash2, type LucideIcon } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useParams, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
@@ -15,7 +15,7 @@ import { Textarea } from '@/admin/components/ui/textarea';
 import { useAuth } from '@/admin/lib/auth';
 import { downloadCsv, pgrstLike, toCsv, useList } from '@/admin/lib/data';
 import { must, toAdminError } from '@/admin/lib/errors';
-import { formatDateTime, formatDay, formatMoney, timeAgo } from '@/admin/lib/format';
+import { formatDateTime, formatDay, timeAgo } from '@/admin/lib/format';
 import type { Permission } from '@/admin/lib/permissions';
 import { sb } from '@/admin/lib/supabase';
 import { cn } from '@/admin/lib/utils';
@@ -123,42 +123,6 @@ export const INBOX: Record<string, InboxDef> = {
       { key: 'reference', label: 'Reference' }, { key: 'created_at', label: 'Received' }, { key: 'status', label: 'Status' }, { key: 'full_name', label: 'Name' },
       { key: 'title_org', label: 'Title / org' }, { key: 'email', label: 'Email' }, { key: 'phone', label: 'Phone' }, { key: 'topic', label: 'Topic' },
       { key: 'languages', label: 'Languages' }, { key: 'format', label: 'Format' }, { key: 'links', label: 'Links' }, { key: 'pitch', label: 'Pitch' }, { key: 'notes', label: 'Notes' },
-    ],
-  },
-  pledges: {
-    title: 'Pledges',
-    description: 'Donation and VIP pledges. No payment is taken on the site: mark a pledge “Paid” once the money has arrived.',
-    icon: HandCoins,
-    table: 'support_pledges',
-    dateColumn: 'created_at',
-    searchColumns: ['email', 'full_name', 'reference'],
-    statuses: ['pending_payment', 'paid', 'cancelled'],
-    readPermission: 'view',
-    updatePermission: 'manage_pledges',
-    deletable: false,
-    notes: true,
-    titleOf: (r) => `${r.reference} · ${formatMoney(r.total_cents as number)}`,
-    columns: [
-      { header: 'Pledge', className: 'w-[30%]', cell: (r) => <span className="flex flex-col"><span className="truncate font-medium">{formatMoney(r.total_cents as number)} {r.frequency === 'monthly' ? '/ month' : 'once'}</span><span className="truncate text-xs text-muted-foreground">{text(r.full_name) === '—' ? text(r.email) : String(r.full_name)}</span></span> },
-      { header: 'Kind', className: 'hidden md:table-cell', cell: (r) => (r.kind === 'vip' ? 'VIP Club' : r.tier ? `Donation · ${r.tier}` : 'Donation') },
-      { header: 'Method', className: 'hidden lg:table-cell', cell: (r) => text(r.method) },
-    ],
-    detail: [
-      { label: 'Reference', value: (r) => text(r.reference) },
-      { label: 'Kind', value: (r) => (r.kind === 'vip' ? 'VIP Club membership' : 'Donation') },
-      { label: 'Frequency', value: (r) => (r.frequency === 'monthly' ? 'Monthly' : 'One time') },
-      { label: 'Amount', value: (r) => formatMoney(r.amount_cents as number) },
-      { label: 'Covers fees', value: (r) => (r.cover_fees ? 'Yes (+3%)' : 'No') },
-      { label: 'Total', value: (r) => formatMoney(r.total_cents as number) },
-      { label: 'Tier', value: (r) => text(r.tier) },
-      { label: 'Preferred method', value: (r) => text(r.method) },
-      { label: 'Name', value: (r) => text(r.full_name) },
-      { label: 'Email', value: (r) => mail(r.email) },
-    ],
-    exportColumns: [
-      { key: 'reference', label: 'Reference' }, { key: 'created_at', label: 'Received' }, { key: 'status', label: 'Status' }, { key: 'kind', label: 'Kind' },
-      { key: 'frequency', label: 'Frequency' }, { key: 'amount_cents', label: 'Amount (cents)' }, { key: 'total_cents', label: 'Total (cents)' }, { key: 'cover_fees', label: 'Covers fees' },
-      { key: 'tier', label: 'Tier' }, { key: 'method', label: 'Method' }, { key: 'full_name', label: 'Name' }, { key: 'email', label: 'Email' }, { key: 'notes', label: 'Notes' },
     ],
   },
   releases: {

@@ -137,12 +137,34 @@ The site only displays the formatting above. Anything else pasted in (scripts, u
 
 ### Inbox
 
-**Inbox → Submissions**: Booking & ads, Guest requests, Pledges, Talent releases (admins only), Subscribers.
+**Inbox → Submissions**: Booking & ads, Guest requests, Talent releases (admins only), Subscribers.
 
 - Open a row to read the full submission, set its **status**, and keep private **notes**.
 - Admins can **Export CSV** of the current filter (up to 5,000 rows). Formulas are neutralised, so the file is safe to open in Excel.
-- **Pledges are promises, not payments**: no money is collected online. Mark a pledge *Paid* once the money actually arrives.
 - Delete a submission only for spam or when the sender asks.
+
+### VIP Club and Donations
+
+**Supporters → VIP Club** lists sign-ups from the VIP Club page ($45.99 a month). **Supporters → Donations** lists gifts from the Support page, one-time or monthly. The badge on each tab counts pledges awaiting payment.
+
+**They are pledges, not payments.** No money is collected on the site. A pledge is marked *Paid* by the team once the money has actually arrived.
+
+**Each tab shows:**
+- **Figures for the chosen period** (7 days to all time):
+  - VIP Club: active members and their monthly total, memberships awaiting payment, new sign-ups, memberships marked paid, cancellations.
+  - Donations: received, pledged, awaiting payment, monthly donors and their monthly total, one-time gifts paid.
+- **Preferred payment methods**, plus monthly tiers for donations.
+- **The list:** filter by status, method or frequency, and search by name, email or reference. Admins can **Export CSV** of what's shown.
+
+**Opening a row gives the detailed page:**
+- **The pledge:** amount, the 3% fee if covered, total, tier, preferred method, when it was received and when it was marked paid ("Member since" for VIP).
+- **Status:** **Mark as paid**, **Cancel** or **Reopen**. Each asks for confirmation. Admins and owners only.
+- **Email [name]:** opens your mail app with a ready message that includes the reference and, for unpaid pledges, a spot for payment details.
+- **Team notes:** saved with the pledge, never shown to the supporter.
+- **Supporter:** their email, what they have paid so far, and their other pledges.
+- **Activity:** who changed the status or notes, and when (admins and owners).
+
+The old link `/admin/inbox/pledges` now opens Donations.
 
 ### Site settings (admins)
 
@@ -232,8 +254,8 @@ Every part of the public site, and where it is managed. *Fixed in code* means it
 | Archive | **Archive** | |
 | About | Intro, paragraphs, facts: **About page**. Portrait: **Page images** | Awards section copy and photos, gallery (design photo set) |
 | Booking | Hero photo: **Page images**. Clients: **Credits**. Emails: **Brand & SEO → Contact**. Requests: **Inbox → Booking & ads** | Service cards, ad products, how-it-works, gala gallery, stats strip (design copy and photos) |
-| Support (donate) | Pledges: **Inbox → Pledges** | Amounts and copy. **Payments are blocked**: no provider connected |
-| VIP Club | Portrait: **Page images**. Pledges: **Inbox → Pledges** | Tiers and benefits (design) |
+| Support (donate) | Pledges: **Supporters → Donations** | Amounts and copy. **Payments are blocked**: no provider connected |
+| VIP Club | Portrait: **Page images**. Sign-ups: **Supporters → VIP Club** | Tiers and benefits (design) |
 | Guest request | Requests: **Inbox → Guest requests** | Copy |
 | Talent release | Signatures: **Inbox → Talent releases** (admins) | Legal text is versioned in code (`terms_version`), on purpose |
 | 404 | Fixed in code | |
@@ -271,6 +293,7 @@ Database (see `supabase/migrations/`):
 | `…_admin_foundation` | `admin_members` + role functions · `status`/`version` on content · `content_drafts`, `content_revisions` · `audit_log` + triggers · `media_assets` + public `media` bucket · `sponsors` · `site_config` with server-side validation · team policies on submissions · `admin_publish`, `admin_set_member_role`, `admin_remove_member`, `admin_update_profile`, `admin_media_usage`, `admin_dashboard`, `private.grant_owner` |
 | `…_admin_seed` | Moves the site's existing images, the FowenNurses sponsor and every hard-coded setting into the database (nothing replaced with sample data), then drops the old `site_settings` table |
 | `…_admin_add_member` | `admin_add_member`, used by the invite function |
+| `…_supporters_tabs` | `support_pledges.paid_at` (set when a pledge is marked paid), `admin_pledge_summary` for the VIP Club and Donations figures, pending counts per kind for the sidebar badges |
 | `…_episode_video_report_articles` | Videos in the media library (`kind`, public `videos` bucket, 5 GB, MP4/WebM/MOV), `episodes.video_id`, report `body` (TipTap JSON), `image_id`, `author`, SEO fields; image/video fields checked in the database; images inside articles count as "in use" |
 
 ---
@@ -296,7 +319,7 @@ Run on 2026-11-03 against the live project. Everything below was actually run.
 | Check | Result |
 |---|---|
 | `npm run typecheck` | Pass |
-| `npm test`: 7 files, 86 tests | **86 passed**. Includes the article renderer (formatting kept, `javascript:` links, unsafe images and unknown embeds dropped), reading time, report pages and previews, the on-page episode video and chapter jumps, video file rules, the article editor (toolbar, word count, read-only mode), forgot/reset password (validation, neutral "sent" message, resend cooldown, expired links, password mismatch, sign-out of other devices). Covers: role matrix, role-filtered navigation, route guards (signed out → sign-in, non-member refused, direct link to a forbidden page refused, admin allowed), error mapping, content helpers, episode and sponsor validation, CSV formula neutralising, search escaping, overview ranges, audit display, the public site with admin settings (section order and visibility, announcement, header links, load-failure notice with no stale figures, sponsors from data, empty sponsors), draft preview without a session, preview token expiry, settings merge |
+| `npm test`: 8 files, 92 tests | **92 passed**. Includes the VIP Club and Donations tabs (summary from the database, list, detail page, mark-as-paid with confirmation and version check, read-only for viewers, follow-up email),  the article renderer (formatting kept, `javascript:` links, unsafe images and unknown embeds dropped), reading time, report pages and previews, the on-page episode video and chapter jumps, video file rules, the article editor (toolbar, word count, read-only mode), forgot/reset password (validation, neutral "sent" message, resend cooldown, expired links, password mismatch, sign-out of other devices). Covers: role matrix, role-filtered navigation, route guards (signed out → sign-in, non-member refused, direct link to a forbidden page refused, admin allowed), error mapping, content helpers, episode and sponsor validation, CSV formula neutralising, search escaping, overview ranges, audit display, the public site with admin settings (section order and visibility, announcement, header links, load-failure notice with no stale figures, sponsors from data, empty sponsors), draft preview without a session, preview token expiry, settings merge |
 | `npm run build` | Pass (public + admin bundles). Build output scanned: no secret key, and no admin code in the public bundles |
 | Row-level security matrix (rolled-back transaction, simulated roles) | Pass: editor can't publish or edit live rows directly; visitor sees only published rows; outsider sees nothing; viewer is read-only; stale version → conflict; owner can't demote themselves |
 | Live API as an anonymous visitor | Refused: `admin_dashboard`, `admin_add_member`, reading the inbox, team, audit log and drafts, writing `site_config`, uploading to `media`, calling `admin-invite` without a token or with only the publishable key. `grant_owner` isn't exposed. Unpublished episodes aren't returned |
@@ -307,6 +330,7 @@ Run on 2026-11-03 against the live project. Everything below was actually run.
 | Video upload, live (2026-11-04) | A 7 MB test file uploaded through the media library in two resumable parts to `<ref>.storage.supabase.co`, was listed as a video, and was served publicly with range requests (HTTP 206). It was then deleted through the Delete button, leaving nothing in the library or in storage |
 | Article editor, live (2026-11-04) | In a new, unsaved report: headings, bold, italic, links and lists render, the word count and reading time update, and reading time locks to the text. Nothing was saved |
 | Public report pages | `/reports`, an article page, a missing report (404) and the team preview render at 390 px with no overflow |
+| VIP Club and Donations (2026-11-04) | Both tabs load the live summary and list with no failed requests. The old Pledges link redirects. In a rolled-back test, a visitor's VIP pledge and donation, the owner marking one paid, `paid_at` and both summaries were all correct, and the summary refused anonymous callers. The detail page wasn't opened live because there are no real pledges yet; it is covered by tests |
 | Anonymous visitor, new data | Can read published episode videos and report articles. Can't write article text (401) or upload to `videos` (403) |
 
 **Signed in as the first owner (2026-11-04):** all 19 admin pages plus the episode and sponsor editors open with real data, no errors and no horizontal overflow at 1280 px. This was checked read-only: nothing was saved or published. The check found and fixed a bug where the sidebar badge request sent a year-275760 date and got 400. **Not yet verified:** saving, publishing and uploading through the UI, and invitation email delivery (needs SMTP).

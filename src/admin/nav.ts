@@ -2,8 +2,9 @@ import {
   Archive,
   CalendarCheck,
   Clapperboard,
+  Crown,
   FileSignature,
-  HandCoins,
+  HandHeart,
   Handshake,
   History,
   House,
@@ -73,11 +74,17 @@ export const NAV: NavGroup[] = [
         children: [
           { title: 'Booking & ads', to: '/admin/inbox/bookings', icon: CalendarCheck, permission: 'view', badge: 'booking_new', keywords: ['requests', 'events', 'advertising'] },
           { title: 'Guest requests', to: '/admin/inbox/guests', icon: Mic, permission: 'view', badge: 'guest_new', keywords: ['pitches'] },
-          { title: 'Pledges', to: '/admin/inbox/pledges', icon: HandCoins, permission: 'view', badge: 'pledges_unpaid', keywords: ['donations', 'vip', 'payments'] },
           { title: 'Talent releases', to: '/admin/inbox/releases', icon: FileSignature, permission: 'view_releases', keywords: ['signatures', 'legal'] },
           { title: 'Subscribers', to: '/admin/inbox/subscribers', icon: Mail, permission: 'view', keywords: ['newsletter', 'briefing', 'emails'] },
         ],
       },
+    ],
+  },
+  {
+    label: 'Supporters',
+    items: [
+      { title: 'VIP Club', to: '/admin/vip', icon: Crown, permission: 'view', badge: 'vip_unpaid', keywords: ['members', 'membership', 'pledges', 'subscription'] },
+      { title: 'Donations', to: '/admin/donations', icon: HandHeart, permission: 'view', badge: 'donations_unpaid', keywords: ['donate', 'gifts', 'donors', 'pledges', 'payments', 'fundraising'] },
     ],
   },
   {

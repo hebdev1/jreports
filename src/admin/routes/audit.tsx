@@ -25,7 +25,7 @@ export const AUDIT_ENTITIES: Record<string, { label: string; link?: (id: string)
   admin_members: { label: 'Team member', link: () => '/admin/team' },
   booking_requests: { label: 'Booking request', link: () => '/admin/inbox/bookings' },
   guest_requests: { label: 'Guest request', link: () => '/admin/inbox/guests' },
-  support_pledges: { label: 'Pledge', link: () => '/admin/inbox/pledges' },
+  support_pledges: { label: 'Pledge', link: (id) => `/admin/pledges/${id}` },
   talent_releases: { label: 'Talent release', link: () => '/admin/inbox/releases' },
   newsletter_subscribers: { label: 'Subscriber', link: () => '/admin/inbox/subscribers' },
 };
