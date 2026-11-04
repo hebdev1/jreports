@@ -56,6 +56,12 @@ Nobody needs to sign up: team members are invited. Even with sign-up on, a self-
 - **Apache / Hostinger:** `public/.htaccess` has the same rules. Upload the contents of `dist/`.
 - **Never** add the secret key (`SUPABASE_SECRET_KEY`, `sb_secret_…`) to the host's build variables. The site doesn't use it. The invitation function reads its own key from Supabase's server environment.
 
+### 6. Video uploads
+
+The `videos` bucket accepts files up to 5 GB, but Supabase also has a project-wide cap that starts at 50 MB. In **Storage → Settings**, set **Global file size limit** to at least **5 GB** (the Pro plan allows up to 500 GB). Until then, videos over the old cap fail with a message that names this setting.
+
+Videos are served from Supabase Storage, so every view counts as egress. The Pro plan includes 250 GB a month, then bills per GB (see Supabase pricing). If episode videos become popular, keep YouTube as the main player, or move video hosting to a streaming service.
+
 ---
 
 ## Roles
@@ -90,12 +96,43 @@ Rules the database enforces whatever the UI does:
 
 **Sponsors** have two placements: *Sponsor card* (the full-width banner) and *Thank-you block*. The card needs an image, and the thank-you block needs thank-you text. FowenNurses is already set up this way.
 
+### Episode videos
+
+In an episode, **Watch and listen → Video file → Choose video** picks a video from the library or uploads a new one.
+
+- **Files:** MP4 (H.264) plays in every browser. WebM and MOV are accepted, but MOV doesn't play everywhere. The limit is 5 GB.
+- **Uploading:** large files go up in 6 MB parts. If the connection drops, choose the same file again and it continues where it stopped. You can cancel while it uploads.
+- **Duration:** a new video fills in the episode's duration if that field is empty.
+- **On the site:** the play button plays the uploaded video on the episode page, and chapters jump inside it. If the episode also has a YouTube link, "Watch on YouTube" stays.
+
+### Report articles
+
+A report is now a full article with its own page, `/reports/<slug>`.
+
+- **Article:** the main text. The toolbar has:
+  - text styles: paragraph, heading, subheading, small heading;
+  - bold, italic, underline, strikethrough, highlight;
+  - links: web, email, or a page of this site like `/episodes/ep-48`;
+  - alignment;
+  - bulleted and numbered lists, quotes, divider lines;
+  - images from the media library and embedded YouTube videos;
+  - clear formatting, undo and redo.
+
+  Ctrl/⌘ + B, I and U work too. The word count and reading time are shown under the editor.
+- **Reading time** is calculated from the text once there is article text.
+- **Cover image** appears at the top of the article.
+- **Byline** shows "By …". If empty, it shows "By James Reports".
+- **Link to the original** is optional. With article text, it shows "Originally published at …". Without article text, the report's title opens the link, as before.
+- **Preview** shows the article exactly as it will look before you publish.
+
+The site only displays the formatting above. Anything else pasted in (scripts, unknown embeds, unsafe links) is dropped when the article is shown.
+
 ### Media library
 
-- **Content → Media library → Upload.** PNG, JPEG, WebP, GIF or AVIF, up to 10 MB. Drag several files at once and each shows its progress.
-- Add a **description** (alt text) to every image: screen readers read it aloud, and the overview flags images that lack one.
-- **Replace file** swaps the picture everywhere it is used and keeps its description.
-- **Delete** is disabled while the image is used. The details panel lists where it is used.
+- **Content → Media library → Upload** accepts images (PNG, JPEG, WebP, GIF or AVIF, up to 10 MB) and videos (MP4, WebM or MOV, up to 5 GB; see [setup step 6](#6-video-uploads)). Drag several files at once and each shows its progress. Use the **Images / Videos** tabs to filter.
+- Add a **description** (alt text) to every image: screen readers read it aloud, and the overview flags images that lack one. For videos, the description labels the player.
+- **Replace file** swaps the picture or video everywhere it is used and keeps its description.
+- **Delete** is disabled while the file is used. This includes images placed inside an article. The details panel lists where it is used.
 - The photos that shipped with the site are listed as **Site images**. They can be chosen anywhere but not deleted.
 
 ### Inbox
@@ -189,8 +226,9 @@ Every part of the public site, and where it is managed. *Fixed in code* means it
 | Watch | Channels, headlines, premiere slot: **Watch & podcast**. Videos: **YouTube** | Program-guide times are computed from the clock |
 | Podcast | Playlists and uploads: **Watch & podcast**. Videos: **YouTube** | Intro copy (design) |
 | Episodes list | **Episodes** | Topic and language filters (fixed vocabularies) |
-| Episode page | All episode fields, image and SEO: **Episodes**. Default image: **Page images**. Supporters line: **Fundraising** | "Transcript" box copy (design; transcripts aren't stored yet) |
-| Reports | **Reports** | |
+| Episode page | All episode fields, uploaded video, image and SEO: **Episodes**. Default image: **Page images**. Supporters line: **Fundraising** | "Transcript" box copy (design; transcripts aren't stored yet) |
+| Reports list | **Reports** | |
+| Report article (`/reports/<slug>`) | Title, summary, byline, date, cover image, article text, original link, SEO: **Reports** | Page layout and article typography |
 | Archive | **Archive** | |
 | About | Intro, paragraphs, facts: **About page**. Portrait: **Page images** | Awards section copy and photos, gallery (design photo set) |
 | Booking | Hero photo: **Page images**. Clients: **Credits**. Emails: **Brand & SEO → Contact**. Requests: **Inbox → Booking & ads** | Service cards, ad products, how-it-works, gala gallery, stats strip (design copy and photos) |
@@ -233,6 +271,7 @@ Database (see `supabase/migrations/`):
 | `…_admin_foundation` | `admin_members` + role functions · `status`/`version` on content · `content_drafts`, `content_revisions` · `audit_log` + triggers · `media_assets` + public `media` bucket · `sponsors` · `site_config` with server-side validation · team policies on submissions · `admin_publish`, `admin_set_member_role`, `admin_remove_member`, `admin_update_profile`, `admin_media_usage`, `admin_dashboard`, `private.grant_owner` |
 | `…_admin_seed` | Moves the site's existing images, the FowenNurses sponsor and every hard-coded setting into the database (nothing replaced with sample data), then drops the old `site_settings` table |
 | `…_admin_add_member` | `admin_add_member`, used by the invite function |
+| `…_episode_video_report_articles` | Videos in the media library (`kind`, public `videos` bucket, 5 GB, MP4/WebM/MOV), `episodes.video_id`, report `body` (TipTap JSON), `image_id`, `author`, SEO fields; image/video fields checked in the database; images inside articles count as "in use" |
 
 ---
 
@@ -257,7 +296,7 @@ Run on 2026-11-03 against the live project. Everything below was actually run.
 | Check | Result |
 |---|---|
 | `npm run typecheck` | Pass |
-| `npm test`: 5 files, 73 tests | **73 passed**. Includes forgot/reset password (validation, neutral "sent" message, resend cooldown, expired links, password mismatch, sign-out of other devices). Covers: role matrix, role-filtered navigation, route guards (signed out → sign-in, non-member refused, direct link to a forbidden page refused, admin allowed), error mapping, content helpers, episode and sponsor validation, CSV formula neutralising, search escaping, overview ranges, audit display, the public site with admin settings (section order and visibility, announcement, header links, load-failure notice with no stale figures, sponsors from data, empty sponsors), draft preview without a session, preview token expiry, settings merge |
+| `npm test`: 7 files, 86 tests | **86 passed**. Includes the article renderer (formatting kept, `javascript:` links, unsafe images and unknown embeds dropped), reading time, report pages and previews, the on-page episode video and chapter jumps, video file rules, the article editor (toolbar, word count, read-only mode), forgot/reset password (validation, neutral "sent" message, resend cooldown, expired links, password mismatch, sign-out of other devices). Covers: role matrix, role-filtered navigation, route guards (signed out → sign-in, non-member refused, direct link to a forbidden page refused, admin allowed), error mapping, content helpers, episode and sponsor validation, CSV formula neutralising, search escaping, overview ranges, audit display, the public site with admin settings (section order and visibility, announcement, header links, load-failure notice with no stale figures, sponsors from data, empty sponsors), draft preview without a session, preview token expiry, settings merge |
 | `npm run build` | Pass (public + admin bundles). Build output scanned: no secret key, and no admin code in the public bundles |
 | Row-level security matrix (rolled-back transaction, simulated roles) | Pass: editor can't publish or edit live rows directly; visitor sees only published rows; outsider sees nothing; viewer is read-only; stale version → conflict; owner can't demote themselves |
 | Live API as an anonymous visitor | Refused: `admin_dashboard`, `admin_add_member`, reading the inbox, team, audit log and drafts, writing `site_config`, uploading to `media`, calling `admin-invite` without a token or with only the publishable key. `grant_owner` isn't exposed. Unpublished episodes aren't returned |
@@ -265,6 +304,10 @@ Run on 2026-11-03 against the live project. Everything below was actually run.
 | Public site in the production build (`npm run preview`) | Home reads announcement, navigation, sponsors, hero image, timeline and fundraising from the database; no console errors |
 | No horizontal overflow at 360, 390, 768, 1024, 1440 px | Pass for `/`, `/about`, `/booking`, `/watch`, `/podcast`, `/episodes`, `/admin/login` (and `/admin/forgot-password` at 360) |
 | Admin when signed out | `/admin` redirects to `/admin/login`; page is `noindex` |
+| Video upload, live (2026-11-04) | A 7 MB test file uploaded through the media library in two resumable parts to `<ref>.storage.supabase.co`, was listed as a video, and was served publicly with range requests (HTTP 206). It was then deleted through the Delete button, leaving nothing in the library or in storage |
+| Article editor, live (2026-11-04) | In a new, unsaved report: headings, bold, italic, links and lists render, the word count and reading time update, and reading time locks to the text. Nothing was saved |
+| Public report pages | `/reports`, an article page, a missing report (404) and the team preview render at 390 px with no overflow |
+| Anonymous visitor, new data | Can read published episode videos and report articles. Can't write article text (401) or upload to `videos` (403) |
 
 **Signed in as the first owner (2026-11-04):** all 19 admin pages plus the episode and sponsor editors open with real data, no errors and no horizontal overflow at 1280 px. This was checked read-only: nothing was saved or published. The check found and fixed a bug where the sidebar badge request sent a year-275760 date and got 400. **Not yet verified:** saving, publishing and uploading through the UI, and invitation email delivery (needs SMTP).
 
@@ -280,5 +323,6 @@ Run on 2026-11-03 against the live project. Everything below was actually run.
 | Social-share previews | Fixed in `index.html`. Per-page previews need pre-rendering or a server |
 | Visitor analytics | None connected. The overview shows real submission counts only, never invented traffic |
 | Transcripts | The episode page's transcript box is design copy; transcripts aren't stored yet |
-| Admin bundle size | One ~830 KB chunk (~230 KB gzipped), loaded only at `/admin`. Can be split per page later |
+| Admin bundle size | ~845 KB (~237 KB gzipped), loaded only at `/admin`. The article editor (~440 KB) loads only when a report is opened, and the public site never loads it |
+| Video file size | Needs the Supabase global file size limit raised (setup step 6). Video views count as Storage egress |
 | Same-origin admin | The admin shares the site's origin, which makes previews work. Moving it to a subdomain would need a different preview mechanism |

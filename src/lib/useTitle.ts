@@ -11,6 +11,12 @@ export function useTitle(page: string | null, description?: string) {
   const { defaultTitle, defaultDescription } = cfg.seo;
   useEffect(() => {
     document.title = page ? `${page} · ${siteName}` : defaultTitle;
-    document.querySelector('meta[name="description"]')?.setAttribute('content', description || defaultDescription);
+    let meta = document.querySelector('meta[name="description"]');
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.setAttribute('name', 'description');
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute('content', description || defaultDescription);
   }, [page, description, siteName, defaultTitle, defaultDescription]);
 }

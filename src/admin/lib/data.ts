@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { mergeConfig, type ConfigKey, type SiteConfig } from '@/lib/siteConfig';
 import { AdminError, must, toAdminError } from './errors';
-import { publicMediaUrl, sb, SUPABASE_URL } from './supabase';
+import { publicMediaUrl, resumableUploadUrl, sb, SUPABASE_URL } from './supabase';
 
 export type ContentEntity = 'episodes' | 'reports' | 'archive_items' | 'sponsors';
 export type ContentStatus = 'draft' | 'published' | 'archived';
@@ -102,8 +102,11 @@ export function useList<T>(p: ListParams) {
 
 // ------------------------------------------------------------------- media
 
+export type MediaKind = 'image' | 'video';
+
 export interface MediaAsset {
   id: string;
+  kind: MediaKind;
   source: 'storage' | 'bundled';
   path: string;
   url: string;
@@ -113,14 +116,22 @@ export interface MediaAsset {
   size_bytes: number | null;
   width: number | null;
   height: number | null;
+  duration_seconds: number | null;
   version: number;
   created_at: string;
   updated_at: string;
 }
 
-export const MEDIA_SELECT = 'id, source, path, url, file_name, alt, mime_type, size_bytes, width, height, version, created_at, updated_at';
+export const MEDIA_SELECT = 'id, kind, source, path, url, file_name, alt, mime_type, size_bytes, width, height, duration_seconds, version, created_at, updated_at';
 export const ACCEPTED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/avif'];
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+// Must match the "videos" bucket (supabase/migrations/*_episode_video_report_articles.sql).
+export const ACCEPTED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
+export const MAX_VIDEO_BYTES = 5 * 1024 * 1024 * 1024;
+
+export const bucketOf = (kind: MediaKind) => (kind === 'video' ? 'videos' : 'media');
+export const kindOfFile = (file: File): MediaKind | null =>
+  ACCEPTED_IMAGE_TYPES.includes(file.type) ? 'image' : ACCEPTED_VIDEO_TYPES.includes(file.type) ? 'video' : null;
 
 export function useMediaByIds(ids: Array<string | null | undefined>) {
   const clean = [...new Set(ids.filter((x): x is string => Boolean(x)))].sort();
@@ -140,6 +151,37 @@ export function validateImageFile(file: File): string | null {
   return null;
 }
 
+export function validateVideoFile(file: File): string | null {
+  if (!ACCEPTED_VIDEO_TYPES.includes(file.type)) return `“${file.name}” isn’t a supported video. Use MP4 (H.264), WebM or MOV.`;
+  if (file.size > MAX_VIDEO_BYTES) return `“${file.name}” is larger than 5 GB. Export a smaller version and try again.`;
+  return null;
+}
+
+/** Image or video, whichever the file is. */
+export function validateMediaFile(file: File): string | null {
+  const kind = kindOfFile(file);
+  if (!kind) return `“${file.name}” isn’t a supported file. Use an image (PNG, JPEG, WebP, GIF, AVIF) or a video (MP4, WebM, MOV).`;
+  return kind === 'video' ? validateVideoFile(file) : validateImageFile(file);
+}
+
+/** Size and length of a video file, read by the browser (null if it can't decode it). */
+function videoInfo(file: File): Promise<{ width: number; height: number; duration: number } | null> {
+  return new Promise((resolve) => {
+    const v = document.createElement('video');
+    const url = URL.createObjectURL(file);
+    const done = (out: { width: number; height: number; duration: number } | null) => {
+      URL.revokeObjectURL(url);
+      resolve(out);
+    };
+    v.preload = 'metadata';
+    v.muted = true;
+    v.onloadedmetadata = () => done({ width: v.videoWidth, height: v.videoHeight, duration: Number.isFinite(v.duration) ? v.duration : 0 });
+    v.onerror = () => done(null);
+    setTimeout(() => done(null), 15_000);
+    v.src = url;
+  });
+}
+
 async function imageSize(file: File): Promise<{ width: number; height: number } | null> {
   try {
     const bmp = await createImageBitmap(file);
@@ -154,7 +196,7 @@ async function imageSize(file: File): Promise<{ width: number; height: number } 
 function storagePath(file: File): string {
   const d = new Date();
   const safe = file.name.toLowerCase().replace(/\.[a-z0-9]+$/, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'image';
-  const ext = file.type.split('/')[1]?.replace('jpeg', 'jpg') ?? 'img';
+  const ext = file.type.split('/')[1]?.replace('jpeg', 'jpg').replace('quicktime', 'mov') ?? 'bin';
   return `uploads/${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${crypto.randomUUID().slice(0, 8)}-${safe}.${ext}`;
 }
 
@@ -191,42 +233,116 @@ function putObject(path: string, file: File, onProgress: (pct: number) => void):
   });
 }
 
-export async function uploadMedia(file: File, alt: string, onProgress: (pct: number) => void): Promise<MediaAsset> {
-  const problem = validateImageFile(file);
+/**
+ * Uploads a video to the "videos" bucket in 6 MB resumable chunks (TUS),
+ * so multi-gigabyte files survive a dropped connection. The session token
+ * is read before every chunk, so long uploads outlive token refreshes.
+ */
+async function putVideoObject(path: string, file: File, onProgress: (pct: number) => void, signal?: AbortSignal): Promise<void> {
+  const { Upload } = await import('tus-js-client');
+  const { data } = await sb.auth.getSession();
+  if (!data.session) throw new AdminError('auth', 'Your session has ended. Sign in again to continue.');
+  await new Promise<void>((resolve, reject) => {
+    const upload = new Upload(file, {
+      endpoint: resumableUploadUrl(),
+      retryDelays: [0, 3000, 5000, 10000, 20000],
+      chunkSize: 6 * 1024 * 1024,
+      uploadDataDuringCreation: true,
+      removeFingerprintOnSuccess: true,
+      headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string, 'x-upsert': 'false' },
+      metadata: { bucketName: 'videos', objectName: path, contentType: file.type, cacheControl: '31536000' },
+      onBeforeRequest: async (req) => {
+        const { data: s } = await sb.auth.getSession();
+        if (s.session) req.setHeader('Authorization', `Bearer ${s.session.access_token}`);
+      },
+      onProgress: (sent, total) => onProgress(total ? Math.min(99, Math.floor((sent / total) * 100)) : 0),
+      onSuccess: () => {
+        onProgress(100);
+        resolve();
+      },
+      onError: (err) => {
+        const status = (err as { originalResponse?: { getStatus(): number } | null }).originalResponse?.getStatus?.() ?? 0;
+        const body = (err as { originalResponse?: { getBody(): string } | null }).originalResponse?.getBody?.() ?? '';
+        if (status === 413 || /size|too large|exceeded/i.test(body)) {
+          reject(new AdminError('validation', 'The video is larger than the storage limit. Raise “Global file size limit” in Supabase → Storage → Settings, or upload a smaller file.'));
+        } else if (status === 401) reject(new AdminError('auth', 'Your session has ended. Sign in again to continue.'));
+        else if (status === 403) reject(new AdminError('forbidden', 'You don’t have permission to upload media.'));
+        else if (/mime|type/i.test(body)) reject(new AdminError('validation', 'This video type isn’t allowed. Use MP4, WebM or MOV.'));
+        else if (status === 0) reject(new AdminError('network', 'The upload was interrupted. Check your connection and try again; it resumes where it stopped.'));
+        else reject(new AdminError('server', 'The upload failed. Please try again.'));
+      },
+    });
+    signal?.addEventListener('abort', () => {
+      void upload.abort(true);
+      reject(new AdminError('validation', 'Upload cancelled.'));
+    });
+    void upload.findPreviousUploads().then((previous) => {
+      if (previous.length) upload.resumeFromPreviousUpload(previous[0]);
+      upload.start();
+    });
+  });
+}
+
+/** Pixel size (and length, for videos) read in the browser. */
+async function fileInfo(file: File, kind: MediaKind): Promise<{ width: number; height: number; duration: number | null } | null> {
+  if (kind === 'image') {
+    const s = await imageSize(file);
+    return s ? { ...s, duration: null } : null;
+  }
+  const v = await videoInfo(file);
+  return v ? { width: v.width, height: v.height, duration: Math.round(v.duration) } : null;
+}
+
+/** Uploads an image or a video and adds it to the media library. */
+export async function uploadMedia(file: File, alt: string, onProgress: (pct: number) => void, signal?: AbortSignal): Promise<MediaAsset> {
+  const problem = validateMediaFile(file);
   if (problem) throw new AdminError('validation', problem);
+  const kind = kindOfFile(file)!;
+  const bucket = bucketOf(kind);
   const path = storagePath(file);
-  const size = await imageSize(file);
-  await putObject(path, file, onProgress);
+  const info = await fileInfo(file, kind);
+  if (kind === 'video') await putVideoObject(path, file, onProgress, signal);
+  else await putObject(path, file, onProgress);
   const { data, error } = await sb
     .from('media_assets')
-    .insert({ source: 'storage', path, url: publicMediaUrl(path), file_name: file.name.slice(0, 200), alt: alt.trim(), mime_type: file.type, size_bytes: file.size, width: size?.width ?? null, height: size?.height ?? null })
+    .insert({
+      kind, source: 'storage', path, url: publicMediaUrl(path, bucket), file_name: file.name.slice(0, 200), alt: alt.trim(), mime_type: file.type, size_bytes: file.size,
+      width: info?.width || null, height: info?.height || null, duration_seconds: info?.duration ?? null,
+    })
     .select(MEDIA_SELECT)
     .single();
   if (error) {
-    await sb.storage.from('media').remove([path]);
+    await sb.storage.from(bucket).remove([path]);
     throw toAdminError(error);
   }
   return data as MediaAsset;
 }
 
-/** Swaps the file behind an asset; everything that uses the asset shows the new image. */
-export async function replaceMedia(asset: MediaAsset, file: File, onProgress: (pct: number) => void): Promise<MediaAsset> {
-  const problem = validateImageFile(file);
+/** Swaps the file behind an asset; everything that uses the asset shows the new file. */
+export async function replaceMedia(asset: MediaAsset, file: File, onProgress: (pct: number) => void, signal?: AbortSignal): Promise<MediaAsset> {
+  const problem = validateMediaFile(file);
   if (problem) throw new AdminError('validation', problem);
+  const kind = kindOfFile(file)!;
+  if (kind !== asset.kind) throw new AdminError('validation', asset.kind === 'video' ? 'Replace a video with another video.' : 'Replace an image with another image.');
+  const bucket = bucketOf(kind);
   const path = storagePath(file);
-  const size = await imageSize(file);
-  await putObject(path, file, onProgress);
+  const info = await fileInfo(file, kind);
+  if (kind === 'video') await putVideoObject(path, file, onProgress, signal);
+  else await putObject(path, file, onProgress);
   const { data, error } = await sb
     .from('media_assets')
-    .update({ source: 'storage', path, url: publicMediaUrl(path), file_name: file.name.slice(0, 200), mime_type: file.type, size_bytes: file.size, width: size?.width ?? null, height: size?.height ?? null })
+    .update({
+      source: 'storage', path, url: publicMediaUrl(path, bucket), file_name: file.name.slice(0, 200), mime_type: file.type, size_bytes: file.size,
+      width: info?.width || null, height: info?.height || null, duration_seconds: info?.duration ?? null,
+    })
     .eq('id', asset.id)
     .eq('version', asset.version)
     .select(MEDIA_SELECT);
   if (error || !data?.length) {
-    await sb.storage.from('media').remove([path]);
-    throw error ? toAdminError(error) : new AdminError('conflict', 'This image was changed by someone else. Reload and try again.');
+    await sb.storage.from(bucket).remove([path]);
+    throw error ? toAdminError(error) : new AdminError('conflict', 'This file was changed by someone else. Reload and try again.');
   }
-  if (asset.source === 'storage') await sb.storage.from('media').remove([asset.path]);
+  if (asset.source === 'storage') await sb.storage.from(bucket).remove([asset.path]);
   return data[0] as MediaAsset;
 }
 
@@ -243,7 +359,7 @@ export async function mediaUsage(id: string): Promise<MediaUsage[]> {
 
 export async function deleteMedia(asset: MediaAsset): Promise<void> {
   must(await sb.from('media_assets').delete().eq('id', asset.id).select('id'));
-  if (asset.source === 'storage') await sb.storage.from('media').remove([asset.path]);
+  if (asset.source === 'storage') await sb.storage.from(bucketOf(asset.kind)).remove([asset.path]);
 }
 
 // -------------------------------------------------------------------- csv

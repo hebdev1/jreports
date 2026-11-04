@@ -113,3 +113,28 @@ dialog.sub-dialog::backdrop { background: rgba(8, 18, 48, 0.6); backdrop-filter:
   .no-print, header, footer, .mini-player { display: none !important; }
   .print-only { display: block !important; }
 }
+
+/* ---------- report articles (components/RichText.tsx) ---------- */
+.jr-article { font-family: 'Lora', serif; font-size: 19px; line-height: 1.75; color: #1B2550; overflow-wrap: break-word; }
+.jr-article > * + * { margin-top: 1.1em; }
+.jr-article p { margin: 0; }
+.jr-article h2, .jr-article h3 { font-family: 'Playfair Display', serif; font-weight: 700; color: #0B1F5C; letter-spacing: -0.01em; text-wrap: balance; }
+.jr-article h2 { font-size: clamp(26px, 3vw, 32px); line-height: 1.2; margin: 1.8em 0 0; }
+.jr-article h3 { font-size: clamp(22px, 2.4vw, 25px); line-height: 1.25; margin: 1.5em 0 0; }
+.jr-article h4 { font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #D21034; margin: 1.6em 0 0; }
+.jr-article ul, .jr-article ol { margin: 0; padding-left: 1.3em; }
+.jr-article li { padding-left: 0.2em; }
+.jr-article li + li { margin-top: 0.4em; }
+.jr-article li > p + p { margin-top: 0.6em; }
+.jr-article ul li::marker { color: #D21034; }
+.jr-article ol li::marker { color: #D21034; font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 0.85em; }
+.jr-article blockquote { margin: 1.6em 0; padding: 4px 0 4px 24px; border-left: 4px solid #D21034; font-family: 'Playfair Display', serif; font-size: 1.2em; font-style: italic; line-height: 1.5; color: #0B1F5C; }
+.jr-article blockquote > * + * { margin-top: 0.6em; }
+.jr-article hr { border: 0; height: 3px; width: 64px; margin: 2.4em auto; background: linear-gradient(90deg, #00209F 50%, #D21034 50%); border-radius: 2px; }
+.jr-article a { color: #00209F; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.jr-article a:hover { color: #D21034; }
+.jr-article mark { background: #FFE9A8; color: inherit; padding: 0 0.15em; border-radius: 2px; }
+.jr-article code { font-size: 0.85em; background: #EEF1F8; padding: 0.1em 0.35em; border-radius: 4px; }
+.jr-article figure { margin: 1.8em 0; }
+.jr-article figure img { display: block; width: 100%; height: auto; border-radius: 12px; background: #DDE3F0; }
+@media (max-width: 600px) { .jr-article { font-size: 17.5px; } }

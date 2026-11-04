@@ -2,7 +2,7 @@
 
 The website for **James Reports**, the independent interview and reporting channel of 4-time Emmy Award winner James Pierre. It is built from the Claude Design project *James Reports Platform Design* (`James Reports.dc.html`), which is kept unchanged in [`design-source/`](design-source/).
 
-Pages: Home · Watch (James Reports TV) · Podcast · Episodes (+ each episode) · Reports · Archive · About · Booking (events and advertising) · Support (donations) · VIP Club · Guest request · Talent release form.
+Pages: Home · Watch (James Reports TV) · Podcast · Episodes (+ each episode) · Reports (+ each article) · Archive · About · Booking (events and advertising) · Support (donations) · VIP Club · Guest request · Talent release form.
 
 **Admin panel:** `/admin`, for the team to manage episodes, reports, archive, sponsors, images, form submissions, site settings and team access. Setup, roles, the everyday guide and the full site ↔ admin coverage matrix are in **[docs/ADMIN.md](docs/ADMIN.md)**.
 
@@ -68,6 +68,7 @@ Project: **James Reports** (`zadipaukhnycrjuixxhj`). Schema lives in [`supabase/
 | `…_admin_foundation` | Team roles, draft/publish workflow, revisions, audit log, media library, sponsors, `site_config`, team access to submissions |
 | `…_admin_seed` | Moves the bundled images, FowenNurses and every hard-coded setting into the database; replaces `site_settings` |
 | `…_admin_add_member` | Owner-only "add to team", used by the `admin-invite` Edge Function (`supabase/functions/`) |
+| `…_episode_video_report_articles` | Uploaded episode videos (public `videos` bucket) and reports as full articles (rich-text body, cover image, byline) |
 
 **Security model.** Visitors use the publishable key, which maps to the `anon` role.
 - Content tables: `anon` may only `SELECT` published rows (and only the public columns). Insert/update/delete privileges are revoked.

@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Copy, Images, Loader2, RefreshCw, Search, Trash2, Upload } from 'lucide-react';
-import { useRef, useState, type DragEvent } from 'react';
+import { Copy, Images, Loader2, RefreshCw, Search, Trash2, Upload, X } from 'lucide-react';
+import { useEffect, useRef, useState, type DragEvent } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 import { EmptyState, ErrorState, LoadingBlock, Page, PageHeader, useConfirm, usePageTitle } from '@/admin/components/common';
@@ -12,7 +12,8 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { Tabs, TabsList, TabsTrigger } from '@/admin/components/ui/tabs';
 import { Textarea } from '@/admin/components/ui/textarea';
 import { useAuth } from '@/admin/lib/auth';
-import { deleteMedia, MEDIA_SELECT, mediaUsage, replaceMedia, uploadMedia, useList, validateImageFile, type MediaAsset } from '@/admin/lib/data';
+import { toClock } from '@/admin/collections/helpers';
+import { ACCEPTED_IMAGE_TYPES, ACCEPTED_VIDEO_TYPES, deleteMedia, kindOfFile, MEDIA_SELECT, mediaUsage, replaceMedia, uploadMedia, useList, validateMediaFile, type MediaAsset } from '@/admin/lib/data';
 import { must, toAdminError } from '@/admin/lib/errors';
 import { formatBytes, formatDateTime } from '@/admin/lib/format';
 import { sb } from '@/admin/lib/supabase';
@@ -24,10 +25,14 @@ interface UploadItem {
   progress: number;
   error?: string;
   done?: boolean;
+  abort?: AbortController;
 }
+
+const ACCEPT_ALL = [...ACCEPTED_IMAGE_TYPES, ...ACCEPTED_VIDEO_TYPES].join(',');
 
 const USAGE_LINK: Record<string, (id: string) => string> = {
   episodes: (id) => `/admin/episodes/${encodeURIComponent(id)}`,
+  reports: (id) => `/admin/reports/${encodeURIComponent(id)}`,
   sponsors: (id) => `/admin/sponsors/${encodeURIComponent(id)}`,
   site_config: () => '/admin/site/brand#page-images',
 };
@@ -44,6 +49,24 @@ export function MediaPage() {
   const [selected, setSelected] = useState<MediaAsset | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const source = params.get('source') ?? 'all';
+  const kind = params.get('kind') ?? 'all';
+  const busy = uploads.some((u) => !u.done && !u.error);
+
+  // Large videos take a while: warn before the tab is closed mid-upload.
+  useEffect(() => {
+    if (!busy) return;
+    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [busy]);
+
+  const setParam = (key: string, value: string) => {
+    const next = new URLSearchParams(params);
+    if (value === 'all') next.delete(key);
+    else next.set(key, value);
+    setParams(next, { replace: true });
+    setPage(1);
+  };
 
   const list = useList<MediaAsset>({
     table: 'media_assets',
@@ -52,19 +75,23 @@ export function MediaPage() {
     pageSize: 30,
     search,
     searchColumns: ['file_name', 'alt'],
-    filters: { source: source === 'all' ? undefined : source },
+    filters: { source: source === 'all' ? undefined : source, kind: kind === 'all' ? undefined : kind },
     sort: { column: 'created_at', ascending: false },
   });
   const pages = Math.max(1, Math.ceil((list.data?.count ?? 0) / 30));
 
   const upload = async (files: FileList | File[]) => {
-    const items = [...files].map((f) => ({ file: f, key: crypto.randomUUID(), problem: validateImageFile(f) }));
-    setUploads((u) => [...items.map((i) => ({ key: i.key, name: i.file.name, progress: 0, error: i.problem ?? undefined })), ...u]);
+    const items = [...files].map((f) => ({ file: f, key: crypto.randomUUID(), problem: validateMediaFile(f), abort: new AbortController() }));
+    setUploads((u) => [...items.map((i) => ({ key: i.key, name: i.file.name, progress: 0, error: i.problem ?? undefined, abort: i.abort })), ...u]);
     let ok = 0;
     for (const i of items) {
       if (i.problem) continue;
+      if (i.abort.signal.aborted) {
+        setUploads((u) => u.map((x) => (x.key === i.key ? { ...x, error: 'Upload cancelled.' } : x)));
+        continue;
+      }
       try {
-        await uploadMedia(i.file, '', (p) => setUploads((u) => u.map((x) => (x.key === i.key ? { ...x, progress: p } : x))));
+        await uploadMedia(i.file, '', (p) => setUploads((u) => u.map((x) => (x.key === i.key ? { ...x, progress: p } : x))), kindOfFile(i.file) === 'video' ? i.abort.signal : undefined);
         setUploads((u) => u.map((x) => (x.key === i.key ? { ...x, progress: 100, done: true } : x)));
         ok += 1;
       } catch (err) {
@@ -73,7 +100,7 @@ export function MediaPage() {
     }
     if (fileRef.current) fileRef.current.value = '';
     await qc.invalidateQueries({ queryKey: ['list'] });
-    if (ok) toast.success(`${ok} image${ok === 1 ? '' : 's'} uploaded. Add a description (alt text) to each.`);
+    if (ok) toast.success(`${ok} file${ok === 1 ? '' : 's'} uploaded. Add a description to each.`);
   };
 
   const onDrop = (e: DragEvent) => {
@@ -86,13 +113,13 @@ export function MediaPage() {
     <Page width="wide">
       <PageHeader
         title="Media library"
-        description="Images used across the site. Uploaded images are stored in Supabase; “Site images” are the photos that shipped with the site design."
+        description="Images and videos used across the site. Uploads are stored in Supabase; “Site images” are the photos that shipped with the site design."
         actions={
           can('upload_media') && (
             <>
-              <input ref={fileRef} type="file" multiple accept="image/png,image/jpeg,image/webp,image/gif,image/avif" className="sr-only" tabIndex={-1} aria-hidden="true" onChange={(e) => e.target.files && void upload(e.target.files)} />
+              <input ref={fileRef} type="file" multiple accept={ACCEPT_ALL} className="sr-only" tabIndex={-1} aria-hidden="true" onChange={(e) => e.target.files && void upload(e.target.files)} />
               <Button onClick={() => fileRef.current?.click()}>
-                <Upload aria-hidden="true" /> Upload images
+                <Upload aria-hidden="true" /> Upload
               </Button>
             </>
           )
@@ -109,11 +136,11 @@ export function MediaPage() {
           onDrop={onDrop}
           className={cn('mb-5 rounded-xl border border-dashed px-4 py-5 text-center text-sm text-muted-foreground transition-colors', dragging && 'border-primary bg-accent', params.get('upload') && 'border-primary')}
         >
-          Drag images here, or{' '}
+          Drag images or videos here, or{' '}
           <button type="button" className="font-medium text-foreground underline underline-offset-4" onClick={() => fileRef.current?.click()}>
             choose files
           </button>
-          . PNG, JPEG, WebP, GIF or AVIF, up to 10 MB each.
+          . Images: PNG, JPEG, WebP, GIF or AVIF, up to 10 MB. Videos: MP4 (H.264, plays everywhere), WebM or MOV, up to 5 GB. Large videos upload in parts and resume if the connection drops.
         </div>
       )}
 
@@ -123,7 +150,14 @@ export function MediaPage() {
             <li key={u.key} className="rounded-lg border bg-card px-3 py-2 text-[13px]">
               <div className="flex items-center justify-between gap-3">
                 <span className="truncate">{u.name}</span>
-                <span className={cn('shrink-0 text-xs', u.error ? 'text-destructive' : u.done ? 'text-success' : 'text-muted-foreground')}>{u.error ? 'Failed' : u.done ? 'Uploaded' : `${u.progress}%`}</span>
+                <span className="flex shrink-0 items-center gap-2">
+                  <span className={cn('text-xs', u.error ? 'text-destructive' : u.done ? 'text-success' : 'text-muted-foreground')}>{u.error ? 'Failed' : u.done ? 'Uploaded' : `${u.progress}%`}</span>
+                  {!u.done && !u.error && u.abort && (
+                    <Button variant="ghost" size="icon" className="size-6" aria-label={`Cancel ${u.name}`} onClick={() => u.abort?.abort()}>
+                      <X className="size-3.5" aria-hidden="true" />
+                    </Button>
+                  )}
+                </span>
               </div>
               {u.error ? (
                 <p className="mt-1 text-xs text-destructive">{u.error}</p>
@@ -140,22 +174,22 @@ export function MediaPage() {
       )}
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Tabs
-          value={source}
-          onValueChange={(v) => {
-            const next = new URLSearchParams(params);
-            if (v === 'all') next.delete('source');
-            else next.set('source', v);
-            setParams(next, { replace: true });
-            setPage(1);
-          }}
-        >
-          <TabsList>
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="storage">Uploaded</TabsTrigger>
-            <TabsTrigger value="bundled">Site images</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex flex-wrap gap-2">
+          <Tabs value={kind} onValueChange={(v) => setParam('kind', v)}>
+            <TabsList aria-label="Type">
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="image">Images</TabsTrigger>
+              <TabsTrigger value="video">Videos</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <Tabs value={source} onValueChange={(v) => setParam('source', v)}>
+            <TabsList aria-label="Origin">
+              <TabsTrigger value="all">Any origin</TabsTrigger>
+              <TabsTrigger value="storage">Uploaded</TabsTrigger>
+              <TabsTrigger value="bundled">Site images</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
         <div className="relative w-full sm:w-72">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <Input
@@ -165,7 +199,7 @@ export function MediaPage() {
               setPage(1);
             }}
             placeholder="Search file name or description"
-            aria-label="Search images"
+            aria-label="Search media"
             className="pl-8"
           />
         </div>
@@ -176,7 +210,7 @@ export function MediaPage() {
       ) : list.isPending ? (
         <LoadingBlock rows={4} />
       ) : list.data.rows.length === 0 ? (
-        <EmptyState icon={Images} title={search ? 'No images match your search' : 'No images here yet'} description={can('upload_media') ? 'Upload images to use them in episodes, sponsors and page settings.' : undefined} />
+        <EmptyState icon={Images} title={search ? 'Nothing matches your search' : 'Nothing here yet'} description={can('upload_media') ? 'Upload images and videos to use them in episodes, reports, sponsors and page settings.' : undefined} />
       ) : (
         <>
           <ul className={cn('grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5', list.isFetching && 'opacity-70')}>
@@ -187,7 +221,7 @@ export function MediaPage() {
                   <span className="block px-3 py-2">
                     <span className="block truncate text-[13px] font-medium">{m.file_name || m.path}</span>
                     <span className="block truncate text-[11px] text-muted-foreground">
-                      {m.source === 'bundled' ? 'Site image' : 'Uploaded'} · {m.width && m.height ? `${m.width}×${m.height}` : formatBytes(m.size_bytes)}
+                      {m.kind === 'video' ? `Video · ${m.duration_seconds ? toClock(m.duration_seconds) : '—'} · ${formatBytes(m.size_bytes)}` : `${m.source === 'bundled' ? 'Site image' : 'Uploaded'} · ${m.width && m.height ? `${m.width}×${m.height}` : formatBytes(m.size_bytes)}`}
                     </span>
                     {!m.alt && <span className="mt-1 block text-[11px] font-medium text-warning">No description</span>}
                   </span>
@@ -198,7 +232,7 @@ export function MediaPage() {
           {pages > 1 && (
             <div className="mt-5 flex items-center justify-between text-[13px] text-muted-foreground">
               <span>
-                Page {page} of {pages} · {list.data.count} images
+                Page {page} of {pages} · {list.data.count} files
               </span>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
@@ -227,6 +261,7 @@ function MediaDetail({ asset, onClose, onChanged }: Readonly<{ asset: MediaAsset
   const [saving, setSaving] = useState(false);
   const [replacing, setReplacing] = useState<number | null>(null);
   const replaceRef = useRef<HTMLInputElement>(null);
+  const noun = asset?.kind === 'video' ? 'video' : 'image';
   if (asset && altFor !== asset.id + asset.version) {
     setAltFor(asset.id + asset.version);
     setAlt(asset.alt);
@@ -258,7 +293,7 @@ function MediaDetail({ asset, onClose, onChanged }: Readonly<{ asset: MediaAsset
       const next = await replaceMedia(asset, file, setReplacing);
       onChanged(next);
       await refresh();
-      toast.success('Image replaced everywhere it’s used.');
+      toast.success(`${noun === 'video' ? 'Video' : 'Image'} replaced everywhere it’s used.`);
     } catch (err) {
       toast.error(toAdminError(err).message);
     } finally {
@@ -271,7 +306,7 @@ function MediaDetail({ asset, onClose, onChanged }: Readonly<{ asset: MediaAsset
     if (!asset) return;
     if ((usage.data?.length ?? 0) > 0) return;
     const ok = await confirm({
-      title: 'Delete this image?',
+      title: `Delete this ${noun}?`,
       description: asset.source === 'bundled' ? 'It’s removed from the library. The original file stays with the site code.' : 'The file is deleted from storage. This can’t be undone.',
       confirmLabel: 'Delete',
       destructive: true,
@@ -280,7 +315,7 @@ function MediaDetail({ asset, onClose, onChanged }: Readonly<{ asset: MediaAsset
     try {
       await deleteMedia(asset);
       await refresh();
-      toast.success('Image deleted');
+      toast.success(`${noun === 'video' ? 'Video' : 'Image'} deleted`);
       onChanged(null);
       onClose();
     } catch (err) {
@@ -296,15 +331,25 @@ function MediaDetail({ asset, onClose, onChanged }: Readonly<{ asset: MediaAsset
           <>
             <SheetHeader>
               <SheetTitle className="truncate pr-6">{asset.file_name || asset.path}</SheetTitle>
-              <SheetDescription>{asset.source === 'bundled' ? 'Site image (shipped with the design)' : 'Uploaded image'}</SheetDescription>
+              <SheetDescription>{asset.source === 'bundled' ? 'Site image (shipped with the design)' : `Uploaded ${noun}`}</SheetDescription>
             </SheetHeader>
             <div className="grid gap-5 px-4 pb-8">
               <div className="overflow-hidden rounded-xl border bg-muted">
-                <MediaThumb asset={asset} className="max-h-80 w-full object-contain" />
+                {asset.kind === 'video' ? (
+                  <video key={asset.url} src={asset.url} controls preload="metadata" playsInline className="max-h-80 w-full bg-black" aria-label={asset.alt || asset.file_name} />
+                ) : (
+                  <MediaThumb asset={asset} className="max-h-80 w-full object-contain" />
+                )}
               </div>
               <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
                 <dt className="text-muted-foreground">Dimensions</dt>
                 <dd>{asset.width && asset.height ? `${asset.width} × ${asset.height}` : '—'}</dd>
+                {asset.kind === 'video' && (
+                  <>
+                    <dt className="text-muted-foreground">Length</dt>
+                    <dd>{asset.duration_seconds ? toClock(asset.duration_seconds) : '—'}</dd>
+                  </>
+                )}
                 <dt className="text-muted-foreground">Size</dt>
                 <dd>{formatBytes(asset.size_bytes)}</dd>
                 <dt className="text-muted-foreground">Type</dt>
@@ -313,21 +358,21 @@ function MediaDetail({ asset, onClose, onChanged }: Readonly<{ asset: MediaAsset
                 <dd>{formatDateTime(asset.created_at)}</dd>
               </dl>
               <div className="flex items-center gap-2">
-                <Input readOnly value={asset.url.startsWith('/') ? `${window.location.origin}${asset.url}` : asset.url} aria-label="Image address" className="text-xs" />
+                <Input readOnly value={asset.url.startsWith('/') ? `${window.location.origin}${asset.url}` : asset.url} aria-label={`${noun === 'video' ? 'Video' : 'Image'} address`} className="text-xs" />
                 <Button
                   variant="outline"
                   size="icon"
-                  aria-label="Copy image address"
+                  aria-label={`Copy ${noun} address`}
                   onClick={() => void navigator.clipboard.writeText(asset.url.startsWith('/') ? `${window.location.origin}${asset.url}` : asset.url).then(() => toast.success('Copied'), () => toast.error('Couldn’t copy'))}
                 >
                   <Copy />
                 </Button>
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="media-alt">Description (alt text)</Label>
+                <Label htmlFor="media-alt">{noun === 'video' ? 'Description' : 'Description (alt text)'}</Label>
                 <Textarea id="media-alt" value={alt} onChange={(e) => setAlt(e.target.value)} maxLength={300} rows={3} disabled={!can('upload_media')} aria-describedby="media-alt-help" />
                 <p id="media-alt-help" className="text-[12px] text-muted-foreground">
-                  Describe what the image shows for people using screen readers. {alt.length}/300
+                  {noun === 'video' ? 'What the video is about; screen readers announce it on the player.' : 'Describe what the image shows for people using screen readers.'} {alt.length}/300
                 </p>
                 {can('upload_media') && (
                   <Button size="sm" className="justify-self-start" disabled={saving || alt.trim() === asset.alt} onClick={() => void saveAlt()}>
@@ -342,7 +387,7 @@ function MediaDetail({ asset, onClose, onChanged }: Readonly<{ asset: MediaAsset
                 ) : usage.isError ? (
                   <ErrorState error={usage.error} onRetry={() => void usage.refetch()} compact />
                 ) : used.length === 0 ? (
-                  <p className="text-[13px] text-muted-foreground">Not used by any episode, sponsor or page setting.</p>
+                  <p className="text-[13px] text-muted-foreground">Not used by any episode, report, sponsor or page setting.</p>
                 ) : (
                   <ul className="grid gap-1 text-[13px]">
                     {used.map((u) => (
@@ -359,7 +404,7 @@ function MediaDetail({ asset, onClose, onChanged }: Readonly<{ asset: MediaAsset
               <div className="flex flex-wrap gap-2 border-t pt-4">
                 {can('upload_media') && (
                   <>
-                    <input ref={replaceRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/avif" className="sr-only" tabIndex={-1} aria-hidden="true" onChange={(e) => void replace(e.target.files?.[0])} />
+                    <input ref={replaceRef} type="file" accept={(asset.kind === 'video' ? ACCEPTED_VIDEO_TYPES : ACCEPTED_IMAGE_TYPES).join(',')} className="sr-only" tabIndex={-1} aria-hidden="true" onChange={(e) => void replace(e.target.files?.[0])} />
                     <Button variant="outline" disabled={replacing !== null} onClick={() => replaceRef.current?.click()}>
                       {replacing !== null ? <Loader2 className="animate-spin" aria-hidden="true" /> : <RefreshCw aria-hidden="true" />}
                       {replacing !== null ? `Replacing ${replacing}%` : 'Replace file'}
@@ -372,7 +417,7 @@ function MediaDetail({ asset, onClose, onChanged }: Readonly<{ asset: MediaAsset
                   </Button>
                 )}
               </div>
-              {used.length > 0 && can('delete') && <p className="-mt-3 text-[12px] text-muted-foreground">Images that are in use can’t be deleted. Replace the file instead, or remove it from the places listed above first.</p>}
+              {used.length > 0 && can('delete') && <p className="-mt-3 text-[12px] text-muted-foreground">Files that are in use can’t be deleted. Replace the file instead, or remove it from the places listed above first.</p>}
             </div>
           </>
         )}

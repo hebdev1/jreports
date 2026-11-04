@@ -1,3 +1,4 @@
+import { Link } from 'react-router';
 import { ArchiveCard, H1 } from '../components/blocks';
 import { EYEBROW, LoadError, Skeleton } from '../components/ui';
 import { useArchive, useReports } from '../lib/content';
@@ -28,16 +29,24 @@ export function Reports() {
                 </time>
               </div>
               <h2 style={sx("margin:0;font-family:'Playfair Display',serif;font-size:28px;font-weight:600;line-height:1.2;text-wrap:pretty")}>
-                {r.url ? (
+                {r.hasArticle ? (
+                  <Link to={`/reports/${encodeURIComponent(r.id)}`} className="h-red-text" style={{ color: 'inherit' }}>
+                    {r.title}
+                  </Link>
+                ) : r.url ? (
                   <a href={r.url} target="_blank" rel="noopener noreferrer" className="h-red-text" style={{ color: 'inherit' }}>
                     {r.title}
+                    <span className="sr-only"> (opens in a new tab)</span>
                   </a>
                 ) : (
                   r.title
                 )}
               </h2>
               <p style={sx("margin:0;font-family:'Lora',serif;font-size:17px;line-height:1.55;color:#4A5578")}>{r.dek}</p>
-              <span style={sx('font-size:13px;color:#6B6B6B')}>{r.readMinutes} min read</span>
+              <span style={sx('font-size:13px;color:#6B6B6B')}>
+                {r.author ? `By ${r.author} · ` : ''}
+                {r.readMinutes} min read
+              </span>
             </article>
           ))}
       </div>

@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { Triangle, ytVideo } from '../components/blocks';
 import { MediaImg } from '../components/Img';
 import { canPlay, usePlayer } from '../components/player';
+import { PreviewBanner, previewLabel, SignInToPreview, usePreviewNoindex } from '../components/PreviewParts';
 import { EYEBROW, LoadError, Skeleton } from '../components/ui';
 import { toApiError, type ApiError } from '../lib/api';
 import { useChannelUrl, useConfig, useEpisodes } from '../lib/content';
@@ -61,14 +62,8 @@ function Preview({ id }: Readonly<{ id: string }>) {
     );
   }, [id]);
   useEffect(load, [load]);
-  useEffect(() => {
-    const meta = document.createElement('meta');
-    meta.name = 'robots';
-    meta.content = 'noindex, nofollow';
-    document.head.appendChild(meta);
-    return () => meta.remove();
-  }, []);
-  const ep = state.status === 'done' && state.result.status === 'ok' ? state.result.episode : undefined;
+  usePreviewNoindex();
+  const ep = state.status === 'done' && state.result.status === 'ok' ? state.result.item : undefined;
   useTitle(ep ? `Preview · ${episodeTitle(ep)}` : 'Preview');
 
   if (state.status === 'loading') return <Loading />;
@@ -80,41 +75,8 @@ function Preview({ id }: Readonly<{ id: string }>) {
     );
   const r = state.result;
   if (r.status === 'not_found') return <NotFound what="episode" />;
-  if (r.status === 'signed_out')
-    return (
-      <section className="wrap" style={sx('max-width:760px;margin:0 auto;padding:96px 32px;display:flex;flex-direction:column;gap:16px')}>
-        <h1 style={sx("margin:0;font-family:'Playfair Display',serif;font-size:36px;font-weight:700")}>Sign in to preview</h1>
-        <p style={sx('margin:0;font-size:16px;line-height:1.6;color:#4A5578')}>Previews of unpublished episodes are only for the James Reports team. Sign in to the admin in this browser, then open the preview again.</p>
-        <a href="/admin/login" className="press h-navy" style={sx('align-self:flex-start;background:#0B1F5C;color:#FFFFFF;border-radius:999px;padding:14px 22px;font-size:14px;font-weight:600')}>
-          Sign in to the admin
-        </a>
-      </section>
-    );
-  const label =
-    r.publication === 'published'
-      ? r.hasChanges
-        ? 'Preview of unpublished changes. Visitors still see the published version.'
-        : 'This episode is live. This preview matches what visitors see.'
-      : r.publication === 'archived'
-        ? 'Preview of an archived episode. Visitors can’t see it.'
-        : 'Preview of a draft. Visitors can’t see this episode until it’s published.';
-  return (
-    <EpisodeView
-      key={r.episode.id}
-      ep={r.episode}
-      banner={
-        <div role="status" style={sx('background:#FFF4E5;color:#0B1F5C;border-bottom:1px solid #F3D9B1;font-size:14px')}>
-          <div className="wrap" style={sx('max-width:1320px;margin:0 auto;padding:10px 32px;display:flex;gap:12px;align-items:center;flex-wrap:wrap')}>
-            <b style={sx('font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#B4231F')}>Preview</b>
-            <span style={{ flex: 1, minWidth: 220 }}>{label}</span>
-            <a href={`/admin/episodes/${encodeURIComponent(r.episode.id)}`} style={sx('font-weight:600;border-bottom:1px solid #0B1F5C')}>
-              Back to the editor
-            </a>
-          </div>
-        </div>
-      }
-    />
-  );
+  if (r.status === 'signed_out') return <SignInToPreview what="episodes" />;
+  return <EpisodeView key={r.item.id} ep={r.item} banner={<PreviewBanner label={previewLabel(r.publication, r.hasChanges, 'episode')} editorHref={`/admin/episodes/${encodeURIComponent(r.item.id)}`} />} />;
 }
 
 function EpisodeView({ ep, banner }: Readonly<{ ep: Ep; banner?: ReactNode }>) {
@@ -123,8 +85,10 @@ function EpisodeView({ ep, banner }: Readonly<{ ep: Ep; banner?: ReactNode }>) {
   const channel = useChannelUrl();
   const [watchingFrom, setWatchingFrom] = useState<number | null>(null);
   const [share, setShare] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const videoRef = useRef<HTMLVideoElement>(null);
   const hasAudio = canPlay(ep);
-  const hasVideo = Boolean(ep.youtubeId);
+  const hasVideo = Boolean(ep.video || ep.youtubeId);
+  const poster = ep.image ?? slot('episodeDefault');
   const supporters = status === 'ready' ? cfg.fundraising.supportersCount : null;
 
   useEffect(() => {
@@ -134,7 +98,12 @@ function EpisodeView({ ep, banner }: Readonly<{ ep: Ep; banner?: ReactNode }>) {
   }, [share]);
 
   const startPlayback = (at = 0) => {
-    if (hasVideo) setWatchingFrom(at);
+    // An uploaded video that is already open just jumps to the chapter.
+    if (ep.video && videoRef.current) {
+      videoRef.current.currentTime = at;
+      void videoRef.current.play().catch(() => undefined);
+      videoRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else if (hasVideo) setWatchingFrom(at);
     else if (hasAudio) player.play(ep, at);
   };
 
@@ -165,7 +134,22 @@ function EpisodeView({ ep, banner }: Readonly<{ ep: Ep; banner?: ReactNode }>) {
           </Link>
           <div style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));gap:48px;align-items:start')}>
             <div style={{ ...sx('position:relative;aspect-ratio:16/9;border-radius:20px;overflow:hidden;display:grid;place-items:center'), background: TOPIC_COVERS[ep.topic] }}>
-              {watchingFrom !== null && ep.youtubeId ? (
+              {watchingFrom !== null && ep.video ? (
+                <video
+                  ref={videoRef}
+                  src={ep.video.url}
+                  poster={poster?.url}
+                  controls
+                  autoPlay
+                  playsInline
+                  preload="metadata"
+                  aria-label={`EP ${ep.number}: ${ep.title}`}
+                  onLoadedMetadata={(e) => {
+                    if (watchingFrom) e.currentTarget.currentTime = watchingFrom;
+                  }}
+                  style={sx('position:absolute;inset:0;width:100%;height:100%;background:#000;object-fit:contain')}
+                />
+              ) : watchingFrom !== null && ep.youtubeId ? (
                 <iframe
                   src={ytVideo(ep.youtubeId, `autoplay=1&rel=0&start=${watchingFrom}`)}
                   title={`EP ${ep.number}: ${ep.title}`}
@@ -176,7 +160,7 @@ function EpisodeView({ ep, banner }: Readonly<{ ep: Ep; banner?: ReactNode }>) {
                 />
               ) : (
                 <>
-                  <MediaImg media={ep.image ?? slot('episodeDefault')} fallback="keyart.png" alt="" eager sizes="(max-width: 1100px) 100vw, 640px" />
+                  <MediaImg media={poster} fallback="keyart.png" alt="" eager sizes="(max-width: 1100px) 100vw, 640px" />
                   {(hasVideo || hasAudio) && (
                     <button type="button" onClick={() => startPlayback()} aria-label={hasVideo ? `Watch EP ${ep.number}` : `Listen to EP ${ep.number}`} className="press h-red" style={sx('position:absolute;width:84px;height:84px;border-radius:999px;border:0;background:#D21034;display:grid;place-items:center;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,0.3)')}>
                       <Triangle size={22} ml={5} />

@@ -271,7 +271,7 @@ function ReportsAndHistory() {
           {reports.status === 'ready' && reports.data.length === 0 && <p style={sx('color:#4A5578')}>Reports are coming soon.</p>}
           {reports.status === 'ready' &&
             reports.data.slice(0, 4).map((r, i) => (
-              <Link key={r.id} to="/reports" className="h-red-text" style={sx('text-align:left;background:none;border:0;border-top:1px solid #CDD4E6;padding:22px 0;display:grid;grid-template-columns:auto 1fr;gap:20px;cursor:pointer;color:#0B1F5C')}>
+              <Link key={r.id} to={r.hasArticle ? `/reports/${encodeURIComponent(r.id)}` : "/reports"} className="h-red-text" style={sx('text-align:left;background:none;border:0;border-top:1px solid #CDD4E6;padding:22px 0;display:grid;grid-template-columns:auto 1fr;gap:20px;cursor:pointer;color:#0B1F5C')}>
                 <span aria-hidden="true" style={sx("font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:#D21034;line-height:1;min-width:40px")}>
                   {String(i + 1).padStart(2, '0')}
                 </span>

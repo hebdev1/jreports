@@ -21,6 +21,7 @@ export const routes: RouteObject[] = [
       { path: 'episodes', ...page(() => import('./pages/Episodes')) },
       { path: 'episodes/:id', ...page(() => import('./pages/Episode')) },
       { path: 'reports', ...page(() => import('./pages/Simple'), 'Reports') },
+      { path: 'reports/:id', ...page(() => import('./pages/Report')) },
       { path: 'archive', ...page(() => import('./pages/Simple'), 'Archive') },
       { path: 'about', ...page(() => import('./pages/About')) },
       { path: 'booking', ...page(() => import('./pages/Booking')) },

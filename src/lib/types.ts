@@ -1,3 +1,5 @@
+import type { RichDoc } from './richtext';
+
 export const TOPICS = ['Haiti', 'Immigration', 'Politics', 'Community', 'Culture', 'Sports', 'Entertainment'] as const;
 export type Topic = (typeof TOPICS)[number];
 
@@ -26,6 +28,8 @@ export interface Episode {
   audioUrl: string | null;
   chapters: Chapter[];
   image?: PublicMedia | null;
+  /** An uploaded video file, played on the episode page. */
+  video?: PublicMedia | null;
   seoTitle?: string;
   seoDescription?: string;
 }
@@ -38,6 +42,17 @@ export interface Report {
   readMinutes: number;
   publishedOn: string;
   url: string | null;
+  /** True when the report has its own article page with full text. */
+  hasArticle?: boolean;
+  author?: string;
+  image?: PublicMedia | null;
+}
+
+/** A report with its article text, for /reports/:id. */
+export interface ReportArticle extends Report {
+  body: RichDoc | null;
+  seoTitle: string;
+  seoDescription: string;
 }
 
 export interface ArchiveItem {
@@ -56,6 +71,7 @@ export interface PublicMedia {
   alt: string;
   width: number | null;
   height: number | null;
+  mime_type?: string;
 }
 
 export interface Sponsor {

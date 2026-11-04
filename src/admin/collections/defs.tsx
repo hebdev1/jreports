@@ -1,5 +1,5 @@
-import { Archive, AudioLines, Clapperboard, Handshake, Newspaper, Video } from 'lucide-react';
-import { useEffect } from 'react';
+import { Archive, AudioLines, Clapperboard, FileText, Film, Handshake, Newspaper, Video } from 'lucide-react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Controller, useFieldArray, useWatch, type UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
 import { FormSection, SelectField, TextAreaField, TextField } from '@/admin/components/form';
@@ -9,9 +9,13 @@ import { Checkbox } from '@/admin/components/ui/checkbox';
 import { Input } from '@/admin/components/ui/input';
 import { useMediaByIds } from '@/admin/lib/data';
 import { formatDay, todayIso } from '@/admin/lib/format';
+import { hasText, isRichDoc, readMinutes, type RichDoc } from '@/lib/richtext';
 import { LANG_CODES, TOPICS } from '@/lib/types';
 import type { CollectionDef, ContentRow } from './framework';
 import { isHttps, parseClock, slugify, toClock, youtubeId } from './helpers';
+
+// The article editor (TipTap) is large; it loads only when a report is opened.
+const RichTextEditor = lazy(() => import('@/admin/components/rich-text-editor').then((m) => ({ default: m.RichTextEditor })));
 
 const TOPIC_OPTIONS = TOPICS.map((t) => ({ value: t, label: t }));
 const LANG_OPTIONS = [
@@ -40,6 +44,7 @@ const episodeSchema = z
     published_on: z.string().regex(DAY, 'Choose the release date.'),
     youtube: z.string().trim().refine((v) => v === '' || youtubeId(v) !== null, 'Paste a YouTube video link or its 11-character ID.'),
     audio_url: z.string().trim().max(500).refine((v) => v === '' || isHttps(v), 'Use an https:// link to the audio file.'),
+    video_id: z.string().nullable(),
     chapters: z.array(z.object({ time: z.string().trim().regex(CLOCK, 'Use m:ss'), label: z.string().trim().min(1, 'Add a label.').max(120, 'Keep it under 120 characters.') })).max(30),
     image_id: z.string().nullable(),
     seo_title: z.string().trim().max(70, 'Search engines show about 70 characters.'),
@@ -66,6 +71,7 @@ interface EpisodeRow extends ContentRow {
   published_on: string;
   youtube_id: string | null;
   audio_url: string | null;
+  video_id: string | null;
   chapters: Array<{ at: number; label: string }>;
   image_id: string | null;
   seo_title: string;
@@ -77,7 +83,14 @@ function EpisodeFields({ form, disabled, isNew }: Readonly<{ form: UseFormReturn
   const chapters = useFieldArray({ control, name: 'chapters' });
   const number = useWatch({ control, name: 'number' });
   const youtube = useWatch({ control, name: 'youtube' });
+  const videoId = useWatch({ control, name: 'video_id' });
+  const video = useMediaByIds([videoId]).data?.[videoId ?? ''];
   const parsedYt = youtube ? youtubeId(youtube) : null;
+
+  // A newly chosen video fills in an empty duration.
+  useEffect(() => {
+    if (video?.duration_seconds && !form.getValues('duration')) form.setValue('duration', toClock(video.duration_seconds), { shouldDirty: true, shouldValidate: true });
+  }, [video, form]);
 
   // Suggest the slug from the episode number while creating.
   useEffect(() => {
@@ -110,6 +123,20 @@ function EpisodeFields({ form, disabled, isNew }: Readonly<{ form: UseFormReturn
       </FormSection>
 
       <FormSection title="Watch and listen" description="Play buttons only appear on the site when the episode has a video or an audio file.">
+        <Controller
+          control={control}
+          name="video_id"
+          render={({ field }) => (
+            <MediaField
+              kind="video"
+              label="Video file"
+              value={field.value}
+              onChange={field.onChange}
+              disabled={disabled}
+              description="Plays on the episode page itself. Upload an MP4 (H.264) for every browser. When the episode also has a YouTube link, visitors can still open it on YouTube."
+            />
+          )}
+        />
         <TextField
           control={control}
           name="youtube"
@@ -188,7 +215,7 @@ export const episodesDef: CollectionDef<EpisodeForm, EpisodeRow> = {
   basePath: '/admin/episodes',
   description: 'Interviews shown on Home, Episodes and each episode page. Only published episodes are visible to visitors.',
   icon: Clapperboard,
-  listSelect: 'id, number, title, guest, topic, language, published_on, youtube_id, audio_url, status, version, updated_at, published_at',
+  listSelect: 'id, number, title, guest, topic, language, published_on, youtube_id, audio_url, video_id, status, version, updated_at, published_at',
   idOf: (r) => r.id,
   titleOf: (r) => r.title,
   searchColumns: ['title', 'guest', 'id'],
@@ -223,8 +250,9 @@ export const episodesDef: CollectionDef<EpisodeForm, EpisodeRow> = {
       header: 'Media',
       className: 'hidden md:table-cell',
       cell: (r) =>
-        r.youtube_id || r.audio_url ? (
+        r.youtube_id || r.audio_url || r.video_id ? (
           <span className="flex items-center gap-1.5 text-muted-foreground">
+            {r.video_id && <Film className="size-4" aria-label="Uploaded video" />}
             {r.youtube_id && <Video className="size-4" aria-label="YouTube video" />}
             {r.audio_url && <AudioLines className="size-4" aria-label="Audio file" />}
           </span>
@@ -236,18 +264,18 @@ export const episodesDef: CollectionDef<EpisodeForm, EpisodeRow> = {
   schema: episodeSchema,
   empty: () => ({
     id: '', number: null as unknown as number, title: '', dek: '', guest: '', topic: 'Haiti', language: 'EN', duration: '', published_on: todayIso(),
-    youtube: '', audio_url: '', chapters: [], image_id: null, seo_title: '', seo_description: '',
+    youtube: '', audio_url: '', video_id: null, chapters: [], image_id: null, seo_title: '', seo_description: '',
   }),
   fromRow: (r) => ({
     id: r.id, number: r.number, title: r.title, dek: r.dek ?? '', guest: r.guest ?? '', topic: r.topic, language: r.language,
-    duration: toClock(r.duration_seconds), published_on: r.published_on, youtube: r.youtube_id ?? '', audio_url: r.audio_url ?? '',
+    duration: toClock(r.duration_seconds), published_on: r.published_on, youtube: r.youtube_id ?? '', audio_url: r.audio_url ?? '', video_id: r.video_id ?? null,
     chapters: (r.chapters ?? []).map((c) => ({ time: toClock(c.at), label: c.label })), image_id: r.image_id ?? null,
     seo_title: r.seo_title ?? '', seo_description: r.seo_description ?? '',
   }),
   toRow: (f) => ({
     number: f.number, title: f.title.trim(), dek: f.dek.trim(), guest: f.guest.trim(), topic: f.topic, language: f.language,
     duration_seconds: parseClock(f.duration), published_on: f.published_on, youtube_id: f.youtube ? youtubeId(f.youtube) : null,
-    audio_url: f.audio_url.trim() || null, chapters: f.chapters.map((c) => ({ at: parseClock(c.time), label: c.label.trim() })).sort((a, b) => a.at - b.at),
+    audio_url: f.audio_url.trim() || null, video_id: f.video_id, chapters: f.chapters.map((c) => ({ at: parseClock(c.time), label: c.label.trim() })).sort((a, b) => a.at - b.at),
     image_id: f.image_id, seo_title: f.seo_title.trim(), seo_description: f.seo_description.trim(),
   }),
   makeId: (f) => f.id.trim(),
@@ -258,15 +286,26 @@ export const episodesDef: CollectionDef<EpisodeForm, EpisodeRow> = {
 
 // ================================================================= reports
 
-const reportSchema = z.object({
-  id: z.string().trim().min(1, 'Enter a slug.').max(120).regex(SLUG, 'Use lowercase letters, numbers and hyphens.'),
-  title: z.string().trim().min(1, 'Enter a title.').max(200),
-  dek: z.string().trim().max(600),
-  topic: z.enum(TOPICS, { error: 'Choose a topic.' }),
-  read_minutes: z.number({ error: 'Enter the reading time.' }).int().min(1, 'At least 1 minute.').max(120, 'At most 120 minutes.'),
-  published_on: z.string().regex(DAY, 'Choose the publication date.'),
-  url: z.string().trim().max(500).refine((v) => v === '' || isHttps(v), 'Use an https:// link.'),
-});
+const MAX_BODY_CHARS = 900_000;
+
+const reportSchema = z
+  .object({
+    id: z.string().trim().min(1, 'Enter a slug.').max(120).regex(SLUG, 'Use lowercase letters, numbers and hyphens.'),
+    title: z.string().trim().min(1, 'Enter a title.').max(200),
+    dek: z.string().trim().max(600),
+    topic: z.enum(TOPICS, { error: 'Choose a topic.' }),
+    author: z.string().trim().max(120, 'Keep the byline under 120 characters.'),
+    read_minutes: z.number({ error: 'Enter the reading time.' }).int().min(1, 'At least 1 minute.').max(120, 'At most 120 minutes.'),
+    published_on: z.string().regex(DAY, 'Choose the publication date.'),
+    url: z.string().trim().max(500).refine((v) => v === '' || isHttps(v), 'Use an https:// link.'),
+    body: z.custom<RichDoc | null>((v) => v === null || isRichDoc(v), 'The article text couldn’t be read. Reload and try again.'),
+    image_id: z.string().nullable(),
+    seo_title: z.string().trim().max(70, 'Search engines show about 70 characters.'),
+    seo_description: z.string().trim().max(200, 'Keep it under 200 characters.'),
+  })
+  .superRefine((v, ctx) => {
+    if (v.body && JSON.stringify(v.body).length > MAX_BODY_CHARS) ctx.addIssue({ code: 'custom', path: ['body'], message: 'The article is too long to save. Split it into two reports.' });
+  });
 type ReportForm = z.infer<typeof reportSchema>;
 
 interface ReportRow extends ContentRow {
@@ -274,29 +313,102 @@ interface ReportRow extends ContentRow {
   title: string;
   dek: string;
   topic: (typeof TOPICS)[number];
+  author: string;
   read_minutes: number;
   published_on: string;
   url: string | null;
+  body?: RichDoc | null;
+  article?: string | null;
+  image_id: string | null;
+  seo_title: string;
+  seo_description: string;
 }
 
 function ReportFields({ form, disabled, isNew }: Readonly<{ form: UseFormReturn<ReportForm>; disabled: boolean; isNew: boolean }>) {
   const { control } = form;
   const title = useWatch({ control, name: 'title' });
+  const body = useWatch({ control, name: 'body' });
+  const fromText = hasText(body) ? readMinutes(body) : null;
   useEffect(() => {
     if (isNew && !form.getFieldState('id').isDirty) form.setValue('id', slugify(title ?? ''), { shouldValidate: false });
   }, [isNew, title, form]);
+  // With article text, the reading time follows the text.
+  useEffect(() => {
+    if (fromText !== null && form.getValues('read_minutes') !== fromText) form.setValue('read_minutes', fromText, { shouldDirty: true, shouldValidate: true });
+  }, [fromText, form]);
   return (
-    <FormSection title="Report">
-      <TextField control={control} name="title" label="Title" required max={200} disabled={disabled} />
-      <TextAreaField control={control} name="dek" label="Summary" max={600} disabled={disabled} />
-      <div className="grid gap-4 sm:grid-cols-3">
-        <SelectField control={control} name="topic" label="Topic" required options={TOPIC_OPTIONS} disabled={disabled} />
-        <TextField control={control} name="read_minutes" label="Reading time (minutes)" type="number" inputMode="numeric" required disabled={disabled} />
-        <TextField control={control} name="published_on" label="Publication date" type="date" required disabled={disabled} />
-      </div>
-      <TextField control={control} name="url" label="Link to the full report" placeholder="https://…" disabled={disabled} description="Optional. With a link, the report’s title on the site opens it in a new tab." />
-      <TextField control={control} name="id" label="Slug" required disabled={disabled || !isNew} description="Internal identifier, fixed after creation." />
-    </FormSection>
+    <>
+      <FormSection title="Report">
+        <TextField control={control} name="title" label="Title" required max={200} disabled={disabled} />
+        <TextAreaField control={control} name="dek" label="Summary" description="Shown under the title on the site and in lists." max={600} disabled={disabled} />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <SelectField control={control} name="topic" label="Topic" required options={TOPIC_OPTIONS} disabled={disabled} />
+          <TextField control={control} name="author" label="Byline" placeholder="James Pierre" max={120} disabled={disabled} description="Leave empty to show “James Reports”." />
+          <TextField control={control} name="published_on" label="Publication date" type="date" required disabled={disabled} />
+          <TextField
+            control={control}
+            name="read_minutes"
+            label="Reading time (minutes)"
+            type="number"
+            inputMode="numeric"
+            required
+            disabled={disabled || fromText !== null}
+            description={fromText !== null ? 'Calculated from the article text.' : 'Calculated automatically once the article has text.'}
+          />
+        </div>
+        <TextField
+          control={control}
+          name="id"
+          label="URL slug"
+          required
+          disabled={disabled || !isNew}
+          description={isNew ? 'Used in the report’s address: /reports/your-slug. It can’t be changed after creation.' : `Address: /reports/${form.getValues('id')}. Fixed after creation so shared links keep working.`}
+        />
+      </FormSection>
+
+      <FormSection title="Article" description="The full text, shown on the report’s own page. Use headings to break up long pieces.">
+        <Controller
+          control={control}
+          name="body"
+          render={({ field, fieldState }) => (
+            <div className="grid gap-1.5">
+              <Suspense fallback={<div role="status" aria-label="Loading the editor" className="h-[440px] animate-pulse rounded-lg border bg-muted" />}>
+                <RichTextEditor label="Article text" value={field.value} onChange={field.onChange} disabled={disabled} invalid={Boolean(fieldState.error)} describedBy={fieldState.error ? 'report-body-error' : undefined} />
+              </Suspense>
+              {fieldState.error && (
+                <p id="report-body-error" className="text-[12px] text-destructive">
+                  {fieldState.error.message}
+                </p>
+              )}
+            </div>
+          )}
+        />
+      </FormSection>
+
+      <FormSection title="Cover image">
+        <Controller
+          control={control}
+          name="image_id"
+          render={({ field }) => <MediaField label="Cover image" value={field.value} onChange={field.onChange} disabled={disabled} description="Shown at the top of the report’s page and when it is shared." />}
+        />
+      </FormSection>
+
+      <FormSection title="Original publication" description="Optional.">
+        <TextField
+          control={control}
+          name="url"
+          label="Link to the original"
+          placeholder="https://…"
+          disabled={disabled}
+          description="With article text, the page shows “Originally published at …”. Without article text, the report’s title on the site opens this link."
+        />
+      </FormSection>
+
+      <FormSection title="Search and sharing" description="Optional. Defaults to the title and summary.">
+        <TextField control={control} name="seo_title" label="Search title" max={70} disabled={disabled} />
+        <TextAreaField control={control} name="seo_description" label="Search description" max={200} rows={2} disabled={disabled} />
+      </FormSection>
+    </>
   );
 }
 
@@ -305,9 +417,9 @@ export const reportsDef: CollectionDef<ReportForm, ReportRow> = {
   singular: 'Report',
   plural: 'Reports',
   basePath: '/admin/reports',
-  description: 'Written reporting shown on the Reports page and the four newest on Home.',
+  description: 'Articles shown on the Reports page, each on its own page, and the four newest on Home.',
   icon: Newspaper,
-  listSelect: 'id, title, topic, read_minutes, published_on, url, status, version, updated_at, published_at',
+  listSelect: 'id, title, topic, author, read_minutes, published_on, url, article:body->>type, status, version, updated_at, published_at',
   idOf: (r) => r.id,
   titleOf: (r) => r.title,
   searchColumns: ['title', 'dek'],
@@ -321,15 +433,35 @@ export const reportsDef: CollectionDef<ReportForm, ReportRow> = {
     { header: 'Report', className: 'w-[50%]', cell: (r) => r.title },
     { header: 'Topic', className: 'hidden md:table-cell', cell: (r) => r.topic },
     { header: 'Published', className: 'hidden sm:table-cell whitespace-nowrap', cell: (r) => formatDay(r.published_on) },
-    { header: 'Read', className: 'hidden lg:table-cell', cell: (r) => `${r.read_minutes} min` },
+    {
+      header: 'Content',
+      className: 'hidden lg:table-cell',
+      cell: (r) =>
+        r.article ? (
+          <span className="flex items-center gap-1.5 text-muted-foreground">
+            <FileText className="size-4" aria-hidden="true" /> Article · {r.read_minutes} min
+          </span>
+        ) : r.url ? (
+          <span className="text-muted-foreground">External link</span>
+        ) : (
+          <span className="text-xs text-warning">Summary only</span>
+        ),
+    },
   ],
   schema: reportSchema,
-  empty: () => ({ id: '', title: '', dek: '', topic: 'Haiti', read_minutes: 5, published_on: todayIso(), url: '' }),
-  fromRow: (r) => ({ id: r.id, title: r.title, dek: r.dek ?? '', topic: r.topic, read_minutes: r.read_minutes, published_on: r.published_on, url: r.url ?? '' }),
-  toRow: (f) => ({ title: f.title.trim(), dek: f.dek.trim(), topic: f.topic, read_minutes: f.read_minutes, published_on: f.published_on, url: f.url.trim() || null }),
+  empty: () => ({ id: '', title: '', dek: '', topic: 'Haiti', author: '', read_minutes: 5, published_on: todayIso(), url: '', body: null, image_id: null, seo_title: '', seo_description: '' }),
+  fromRow: (r) => ({
+    id: r.id, title: r.title, dek: r.dek ?? '', topic: r.topic, author: r.author ?? '', read_minutes: r.read_minutes, published_on: r.published_on, url: r.url ?? '',
+    body: isRichDoc(r.body) ? r.body : null, image_id: r.image_id ?? null, seo_title: r.seo_title ?? '', seo_description: r.seo_description ?? '',
+  }),
+  toRow: (f) => ({
+    title: f.title.trim(), dek: f.dek.trim(), topic: f.topic, author: f.author.trim(), read_minutes: hasText(f.body) ? readMinutes(f.body) : f.read_minutes,
+    published_on: f.published_on, url: f.url.trim() || null, body: hasText(f.body) ? f.body : null, image_id: f.image_id, seo_title: f.seo_title.trim(), seo_description: f.seo_description.trim(),
+  }),
   makeId: (f) => f.id.trim(),
   Fields: ReportFields,
-  publicUrl: () => '/reports',
+  publicUrl: (r) => `/reports/${encodeURIComponent(r.id)}`,
+  previewUrl: (id) => `/reports/${encodeURIComponent(id)}?preview=1`,
 };
 
 // ================================================================= archive

@@ -1,6 +1,7 @@
 import { mergeConfig, type SiteConfig } from './siteConfig';
 import { supabase } from './supabase';
-import type { ArchiveItem, Chapter, Episode, LangCode, PublicMedia, Report, Sponsor, Topic } from './types';
+import { isRichDoc } from './richtext';
+import type { ArchiveItem, Chapter, Episode, LangCode, PublicMedia, Report, ReportArticle, Sponsor, Topic } from './types';
 import type { BookingInput, GuestInput, NewsletterInput, PledgeInput, ReleaseInput } from './validation';
 
 const TIMEOUT_MS = 15_000;
@@ -91,22 +92,22 @@ async function select<T>(run: () => PromiseLike<{ data: T | null; error: unknown
 // status filters below say so explicitly and keep the queries index-friendly.
 
 /** Columns visitors may read from media_assets. */
-export const MEDIA_COLUMNS = 'id, source, url, alt, width, height';
+export const MEDIA_COLUMNS = 'id, source, url, alt, width, height, mime_type';
 
 export interface EpisodeRow {
   id: string; number: number; title: string; dek: string; guest: string; topic: Topic; language: LangCode;
   duration_seconds: number; published_on: string; youtube_id: string | null; audio_url: string | null; chapters: Chapter[] | null;
-  image?: PublicMedia | null; seo_title?: string; seo_description?: string;
+  image?: PublicMedia | null; video?: PublicMedia | null; seo_title?: string; seo_description?: string;
 }
 
-export const EPISODE_COLUMNS = `id, number, title, dek, guest, topic, language, duration_seconds, published_on, youtube_id, audio_url, chapters, seo_title, seo_description, image:media_assets!episodes_image_id_fkey(${MEDIA_COLUMNS})`;
+export const EPISODE_COLUMNS = `id, number, title, dek, guest, topic, language, duration_seconds, published_on, youtube_id, audio_url, chapters, seo_title, seo_description, image:media_assets!episodes_image_id_fkey(${MEDIA_COLUMNS}), video:media_assets!episodes_video_id_fkey(${MEDIA_COLUMNS})`;
 
 export function mapEpisode(r: EpisodeRow): Episode {
   return {
     id: r.id, number: r.number, title: r.title, dek: r.dek, guest: r.guest, topic: r.topic, language: r.language,
     durationSeconds: r.duration_seconds, publishedOn: r.published_on, youtubeId: r.youtube_id, audioUrl: r.audio_url,
     chapters: Array.isArray(r.chapters) ? r.chapters.filter((c) => typeof c?.at === 'number' && typeof c?.label === 'string') : [],
-    image: r.image ?? null, seoTitle: r.seo_title ?? '', seoDescription: r.seo_description ?? '',
+    image: r.image ?? null, video: r.video ?? null, seoTitle: r.seo_title ?? '', seoDescription: r.seo_description ?? '',
   };
 }
 
@@ -123,13 +124,45 @@ export async function fetchEpisodes(): Promise<Episode[]> {
   return (rows as unknown as EpisodeRow[]).map(mapEpisode);
 }
 
-export async function fetchReports(): Promise<Report[]> {
-  const rows = await select(() =>
-    client().from('reports').select('id, topic, title, dek, read_minutes, published_on, url').eq('status', 'published').order('published_on', { ascending: false }).abortSignal(signal()),
-  );
-  return (rows as Array<{ id: string; topic: Topic; title: string; dek: string; read_minutes: number; published_on: string; url: string | null }>).map((r) => ({
+export interface ReportRow {
+  id: string; topic: Topic; title: string; dek: string; read_minutes: number; published_on: string; url: string | null;
+  author?: string; article?: string | null; image?: PublicMedia | null; body?: unknown; seo_title?: string; seo_description?: string;
+}
+
+// The list only asks whether a report has article text (body->>type), not for the text itself.
+export const REPORT_COLUMNS = `id, topic, title, dek, read_minutes, published_on, url, author, article:body->>type, image:media_assets!reports_image_id_fkey(${MEDIA_COLUMNS})`;
+
+export function mapReport(r: ReportRow): Report {
+  return {
     id: r.id, topic: r.topic, title: r.title, dek: r.dek, readMinutes: r.read_minutes, publishedOn: r.published_on, url: r.url,
-  }));
+    hasArticle: r.article === 'doc' || isRichDoc(r.body), author: r.author ?? '', image: r.image ?? null,
+  };
+}
+
+export function mapReportArticle(r: ReportRow): ReportArticle {
+  return { ...mapReport(r), body: isRichDoc(r.body) ? r.body : null, seoTitle: r.seo_title ?? '', seoDescription: r.seo_description ?? '' };
+}
+
+export async function fetchReports(): Promise<Report[]> {
+  const rows = await select(() => client().from('reports').select(REPORT_COLUMNS).eq('status', 'published').order('published_on', { ascending: false }).abortSignal(signal()));
+  return (rows as unknown as ReportRow[]).map(mapReport);
+}
+
+/** One published report with its article text; null when there is no such report. */
+export async function fetchReport(id: string): Promise<ReportArticle | null> {
+  try {
+    const { data, error } = await client()
+      .from('reports')
+      .select(`${REPORT_COLUMNS}, body, seo_title, seo_description`)
+      .eq('status', 'published')
+      .eq('id', id)
+      .abortSignal(signal())
+      .maybeSingle();
+    if (error) throw error;
+    return data ? mapReportArticle(data as unknown as ReportRow) : null;
+  } catch (err) {
+    throw toApiError(err);
+  }
 }
 
 export async function fetchArchive(): Promise<ArchiveItem[]> {
