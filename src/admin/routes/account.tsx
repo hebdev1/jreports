@@ -31,8 +31,9 @@ const THEMES: Array<{ value: Theme; label: string; icon: typeof Sun }> = [
 ];
 
 function passwordMessage(m: string): string {
-  if (/weak|password should/i.test(m)) return 'Choose a stronger password (at least 10 characters, mixing letters and numbers).';
+  // "New password should be different…" also contains "password should", so test it first.
   if (/same password|different from the old/i.test(m)) return 'Choose a password different from your current one.';
+  if (/weak|password should/i.test(m)) return 'Choose a stronger password (at least 10 characters, mixing letters and numbers).';
   if (/reauthenticat|recent/i.test(m)) return 'For security, sign out and sign in again, then change your password.';
   return 'Your password couldn’t be changed. Try again.';
 }

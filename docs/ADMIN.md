@@ -129,6 +129,7 @@ Every change by a signed-in team member: content, media, settings, team, and tri
 
 ### Other
 
+- **Forgot your password?** (under the sign-in form) → `/admin/forgot-password`. Enter your email and you get a link that works once and expires after one hour. You can send it again after 60 seconds. The page never says whether an account exists. The link opens `/admin/reset-password`, where you choose a new password of at least 10 characters. Saving it signs out every other device. Expired or already-used links say so and offer a new one. Invitations use the same page for the first password.
 - **Ctrl/⌘ + K** opens the command palette: jump to any page, search episodes, reports and sponsors, or create something new.
 - **Account**: your display name, password, theme (light, dark or match device), and "sign out other devices".
 
@@ -256,7 +257,7 @@ Run on 2026-11-03 against the live project. Everything below was actually run.
 | Check | Result |
 |---|---|
 | `npm run typecheck` | Pass |
-| `npm test`: 4 files, 66 tests | **66 passed**. Covers: role matrix, role-filtered navigation, route guards (signed out → sign-in, non-member refused, direct link to a forbidden page refused, admin allowed), error mapping, content helpers, episode and sponsor validation, CSV formula neutralising, search escaping, overview ranges, audit display, the public site with admin settings (section order and visibility, announcement, header links, load-failure notice with no stale figures, sponsors from data, empty sponsors), draft preview without a session, preview token expiry, settings merge |
+| `npm test`: 5 files, 73 tests | **73 passed**. Includes forgot/reset password (validation, neutral "sent" message, resend cooldown, expired links, password mismatch, sign-out of other devices). Covers: role matrix, role-filtered navigation, route guards (signed out → sign-in, non-member refused, direct link to a forbidden page refused, admin allowed), error mapping, content helpers, episode and sponsor validation, CSV formula neutralising, search escaping, overview ranges, audit display, the public site with admin settings (section order and visibility, announcement, header links, load-failure notice with no stale figures, sponsors from data, empty sponsors), draft preview without a session, preview token expiry, settings merge |
 | `npm run build` | Pass (public + admin bundles). Build output scanned: no secret key, and no admin code in the public bundles |
 | Row-level security matrix (rolled-back transaction, simulated roles) | Pass: editor can't publish or edit live rows directly; visitor sees only published rows; outsider sees nothing; viewer is read-only; stale version → conflict; owner can't demote themselves |
 | Live API as an anonymous visitor | Refused: `admin_dashboard`, `admin_add_member`, reading the inbox, team, audit log and drafts, writing `site_config`, uploading to `media`, calling `admin-invite` without a token or with only the publishable key. `grant_owner` isn't exposed. Unpublished episodes aren't returned |

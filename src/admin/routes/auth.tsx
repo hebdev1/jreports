@@ -1,8 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, MailCheck } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router';
+import { toast } from 'sonner';
 import { z } from 'zod';
 import { FullScreenMessage } from '@/admin/components/shell';
 import { ErrorState, usePageTitle } from '@/admin/components/common';
@@ -15,12 +16,39 @@ function authMessage(err: { message?: string; status?: number; code?: string } |
   const m = err?.message ?? '';
   if (/invalid login credentials/i.test(m)) return 'The email or password is incorrect.';
   if (/email not confirmed/i.test(m)) return 'This email hasn’t been confirmed yet. Use the link in your invitation email first.';
+  const wait = waitSeconds(err);
+  if (wait) return `For security, wait ${wait} seconds before trying again.`;
+  if (err?.code === 'over_email_send_rate_limit' || /email rate limit/i.test(m)) return 'Too many emails were sent in a short time. Wait a few minutes and try again.';
   if (/rate limit|too many/i.test(m) || err?.status === 429) return 'Too many attempts. Wait a minute and try again.';
   if (/failed to fetch|network/i.test(m)) return 'We couldn’t reach the server. Check your connection and try again.';
-  if (/weak|password should/i.test(m)) return 'Choose a stronger password (at least 10 characters, mixing letters and numbers).';
-  if (/same password|different from the old/i.test(m)) return 'Choose a password different from your current one.';
+  // "New password should be different…" also contains "password should", so test it first.
+  if (err?.code === 'same_password' || /same password|different from the old/i.test(m)) return 'Choose a password different from your current one.';
+  if (err?.code === 'weak_password' || /weak|password should/i.test(m)) return 'Choose a stronger password (at least 10 characters, mixing letters and numbers).';
   return m || 'Something went wrong. Please try again.';
 }
+
+/** "…you can only request this after 42 seconds." → 42 (Supabase's per-address cooldown). */
+export function waitSeconds(err: { message?: string } | null): number | null {
+  const m = /after (\d+) seconds?/i.exec(err?.message ?? '');
+  return m ? Number(m[1]) : null;
+}
+
+/**
+ * An emailed link that failed comes back with the reason in the URL
+ * (`#error_code=otp_expired…`, or `?error=…` for code links).
+ */
+export function linkError(loc: { hash: string; search: string }): string | null {
+  const hash = new URLSearchParams(loc.hash.replace(/^#/, ''));
+  const query = new URLSearchParams(loc.search);
+  const get = (k: string) => hash.get(k) ?? query.get(k);
+  if (!get('error') && !get('error_code') && !get('error_description')) return null;
+  if (get('error_code') === 'otp_expired' || /expired/i.test(get('error_description') ?? '')) {
+    return 'This link has expired or was already used. Links work once and expire after one hour.';
+  }
+  return 'This link isn’t valid.';
+}
+
+const RESEND_SECONDS = 60;
 
 function Card({ title, description, children }: Readonly<{ title: string; description?: string; children: React.ReactNode }>) {
   return (
@@ -44,6 +72,7 @@ export function LoginPage() {
   const location = useLocation();
   const [error, setError] = useState<string | null>(null);
   const form = useForm<z.infer<typeof loginSchema>>({ resolver: zodResolver(loginSchema), defaultValues: { email: '', password: '' } });
+  const typedEmail = useWatch({ control: form.control, name: 'email' });
   const from = (location.state as { from?: string } | null)?.from ?? '/admin';
   const expired = new URLSearchParams(location.search).get('expired') === '1';
 
@@ -77,7 +106,7 @@ export function LoginPage() {
             {form.formState.isSubmitting && <Loader2 className="animate-spin" aria-hidden="true" />}
             {form.formState.isSubmitting ? 'Signing in…' : 'Sign in'}
           </Button>
-          <Link to="/admin/forgot-password" className="justify-self-center text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+          <Link to="/admin/forgot-password" state={{ email: typedEmail.trim() }} className="justify-self-center text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
             Forgot your password?
           </Link>
         </form>
@@ -95,28 +124,78 @@ const forgotSchema = z.object({ email: z.string().trim().min(1, 'Enter your emai
 
 export function ForgotPasswordPage() {
   usePageTitle('Reset your password');
-  const [sent, setSent] = useState(false);
+  const location = useLocation();
+  const [sentTo, setSentTo] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
+  const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const form = useForm<z.infer<typeof forgotSchema>>({ resolver: zodResolver(forgotSchema), defaultValues: { email: '' } });
+  const prefill = (location.state as { email?: string } | null)?.email ?? '';
+  const form = useForm<z.infer<typeof forgotSchema>>({ resolver: zodResolver(forgotSchema), defaultValues: { email: prefill } });
 
-  const onSubmit = form.handleSubmit(async (v) => {
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
+
+  const send = async (email: string) => {
     setError(null);
-    const { error: e } = await sb.auth.resetPasswordForEmail(v.email, { redirectTo: `${window.location.origin}/admin/reset-password` });
-    // Don't reveal whether an account exists: only connection/limit problems are reported.
-    if (e && (/rate|fetch|network/i.test(e.message) || e.status === 429)) {
-      setError(authMessage(e));
-      return;
+    setSending(true);
+    const { error: e } = await sb.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/admin/reset-password` });
+    setSending(false);
+    if (e) {
+      const wait = waitSeconds(e);
+      // Never say whether an account exists: only typos, limits and connection problems are reported.
+      if (e.code === 'email_address_invalid') {
+        form.setError('email', { message: 'Check the email address.' });
+        return;
+      }
+      if (wait || e.status === 429 || /rate|fetch|network/i.test(e.message)) {
+        setError(authMessage(e));
+        if (wait) setCooldown(wait);
+        return;
+      }
     }
-    setSent(true);
-  });
+    setSentTo(email);
+    setCooldown(RESEND_SECONDS);
+  };
+
+  const onSubmit = form.handleSubmit((v) => send(v.email));
 
   return (
     <FullScreenMessage>
       <Card title="Reset your password" description="We’ll email you a link to choose a new password.">
-        {sent ? (
-          <div role="status" className="flex gap-3 rounded-lg bg-success-soft p-4 text-sm text-success">
-            <MailCheck className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-            <p>If that email belongs to a team member, a reset link is on its way. It expires after one hour.</p>
+        {sentTo ? (
+          <div className="grid gap-4">
+            <div role="status" className="flex gap-3 rounded-lg bg-success-soft p-4 text-sm text-success">
+              <MailCheck className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+              <p>
+                If <strong className="font-semibold">{sentTo}</strong> belongs to a team member, a reset link is on its way. It works once and expires after one hour. Check your spam folder if it doesn’t arrive.
+              </p>
+            </div>
+            {error && (
+              <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm font-medium text-destructive">
+                {error}
+              </p>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="outline" disabled={cooldown > 0 || sending} onClick={() => void send(sentTo)}>
+                {sending && <Loader2 className="animate-spin" aria-hidden="true" />}
+                {cooldown > 0 ? `Send again in ${cooldown} s` : 'Send again'}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  // Supabase's wait applies per address, so another address can be tried now.
+                  setSentTo(null);
+                  setError(null);
+                  setCooldown(0);
+                }}
+              >
+                Use a different email
+              </Button>
+            </div>
           </div>
         ) : (
           <form onSubmit={onSubmit} noValidate className="grid gap-4">
@@ -126,9 +205,9 @@ export function ForgotPasswordPage() {
                 {error}
               </p>
             )}
-            <Button type="submit" disabled={form.formState.isSubmitting} className="h-10">
-              {form.formState.isSubmitting && <Loader2 className="animate-spin" aria-hidden="true" />}
-              Send reset link
+            <Button type="submit" disabled={sending || cooldown > 0} className="h-10">
+              {sending && <Loader2 className="animate-spin" aria-hidden="true" />}
+              {cooldown > 0 ? `Send reset link (${cooldown} s)` : 'Send reset link'}
             </Button>
           </form>
         )}
@@ -153,11 +232,13 @@ export function ResetPasswordPage() {
   const auth = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
+  // Read the link's own error before anything rewrites the address bar.
+  const [badLink] = useState(() => linkError(window.location));
   const [waited, setWaited] = useState(false);
   const form = useForm<z.infer<typeof resetSchema>>({ resolver: zodResolver(resetSchema), defaultValues: { password: '', confirm: '' } });
 
   useEffect(() => {
-    const t = setTimeout(() => setWaited(true), 2500);
+    const t = setTimeout(() => setWaited(true), 4000);
     return () => clearTimeout(t);
   }, []);
 
@@ -168,21 +249,27 @@ export function ResetPasswordPage() {
       setError(authMessage(e));
       return;
     }
+    // A reset may follow a lost or shared device: end every other session.
+    await sb.auth.signOut({ scope: 'others' });
+    toast.success('Your new password is saved. Any other devices were signed out.');
     navigate('/admin', { replace: true });
   });
 
-  if (!auth.session) {
+  // A failed link wins even if an older session is still open in this browser.
+  if (badLink || !auth.session) {
     return (
       <FullScreenMessage>
         <Card title="Choose a password">
-          {waited ? (
-            <p className="text-sm text-muted-foreground">
-              This link is invalid or has expired.{' '}
-              <Link to="/admin/forgot-password" className="font-medium text-foreground underline underline-offset-4">
-                Request a new one
+          {badLink || waited ? (
+            <div role="alert" className="grid gap-4 text-sm text-muted-foreground">
+              <p>{badLink ?? 'This link is invalid or has expired.'}</p>
+              <Button asChild>
+                <Link to="/admin/forgot-password">Request a new link</Link>
+              </Button>
+              <Link to="/admin/login" className="text-center underline-offset-4 hover:text-foreground hover:underline">
+                Back to sign in
               </Link>
-              .
-            </p>
+            </div>
           ) : (
             <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Checking your link…
